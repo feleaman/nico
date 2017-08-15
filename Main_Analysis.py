@@ -1,5 +1,5 @@
 # Main_Analysis.py
-# Last updated: 15.08.2017 by Felix Leaman
+# Last updated: 15.08.2017 13:13 by Felix Leaman
 # Description:
 # Code for opening a .mat or .tdms data file with single channel and plotting different types of analysis
 # The file and channel is selected by the user
