@@ -8,6 +8,8 @@
 #++++++++++++++++++++++ IMPORT MODULES AND FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cm
 from tkinter import filedialog
 from tkinter import Tk
 
@@ -108,7 +110,7 @@ t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
+config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':True, 'STPSD':False,
 'Cepstrum':False, 'Quantile':False, 'Hist':False}
 
 
@@ -118,14 +120,14 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['highpass', 80.0e3, 3], 
+config_demod = {'analysis':False, 'mode':'hilbert', 'prefilter':['highpass', 80.0e3, 3], 
 'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 200.0, 3]}
 #When hilbert is selected, the other parameters are ignored
 
 
 
 
-config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
+config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'binary'}
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
@@ -293,21 +295,75 @@ for element in config_analysis:
 		
 		
 		
-		elif element == 'STFT':			
-			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-			ax[0].pcolormesh(t_stft, f_stft, stftX1)
-			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
-			ax[0].set_ylabel('Frequency Hz')
-			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
-				ax[0].set_ylim((0, config_demod['filter'][1]))
+		elif element == 'STFT':
+			if config_stft['type'] == 'colormesh':
+				fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+				map = ax[0].pcolormesh(t_stft, f_stft, stftX1, cmap='gray_r')
+				ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+				ax[0].set_ylabel('Frequency Hz')			
+				fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
+					ax[0].set_ylim((0, config_demod['filter'][1]))
+				
+				map = ax[1].pcolormesh(t_stft, f_stft, stftX2)
+				ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+				ax[1].set_ylabel('Frequency Hz')
+				ax[1].set_xlabel('Time s')
+				fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='neither')
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[1].set_ylim((0, config_demod['filter'][1]))
 			
+			
+			elif config_stft['type'] == 'image':
+				fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+				map = ax[0].imshow(stftX1, cmap=cm.RdGy, aspect='auto', interpolation='bilinear', vmax=abs(stftX2).max(), vmin=-abs(stftX2).max(), origin='lower')
+				ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+				ax[0].set_ylabel('Frequency Hz')			
+				# fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
+					ax[0].set_ylim((0, config_demod['filter'][1]))
+				
+				# map = ax[1].imshow(stftX2, norm=colors.Normalize())
+				map = ax[1].imshow(stftX2, aspect='auto', interpolation='hanning', cmap=cm.jet_grayscale, vmax=abs(stftX2).max(), vmin=-abs(stftX2).max(), origin='lower')
 
-			ax[1].pcolormesh(t_stft, f_stft, stftX2)
-			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
-			ax[1].set_ylabel('Frequency Hz')
-			ax[1].set_xlabel('Time s')
-			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
-				ax[1].set_ylim((0, config_demod['filter'][1]))
+				ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+				ax[1].set_ylabel('Frequency Hz')
+				ax[1].set_xlabel('Time s')
+				# fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='neither')
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[1].set_ylim((0, config_demod['filter'][1]))
+			
+			
+			
+			elif config_stft['type'] == 'binary':
+				for i in range(len(stftX1)):
+					for j in range(len(stftX1[0])):
+						if stftX1[i][j] > 0.001:
+							stftX1[i][j] = 1
+						else:
+							stftX1[i][j] = 0
+				fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+				map = ax[0].imshow(stftX1, cmap=cm.RdGy, aspect='auto', interpolation='bilinear', vmax=abs(stftX2).max(), vmin=-abs(stftX2).max(), origin='lower')
+				ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+				ax[0].set_ylabel('Frequency Hz')			
+				# fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
+					ax[0].set_ylim((0, config_demod['filter'][1]))
+				
+				# map = ax[1].imshow(stftX2, norm=colors.Normalize())
+				map = ax[1].imshow(stftX2, aspect='auto', interpolation='bilinear', cmap=cm.RdGy, vmax=abs(stftX2).max(), vmin=-abs(stftX2).max(), origin='lower')
+
+				ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+				ax[1].set_ylabel('Frequency Hz')
+				ax[1].set_xlabel('Time s')
+				# fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='neither')
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[1].set_ylim((0, config_demod['filter'][1]))
+			
+			
+			
+			
+			
 			
 		elif element == 'STPSD':			
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
