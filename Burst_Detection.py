@@ -1,5 +1,5 @@
-# Double_Features.py
-# Last updated: 16.08.2017 15:58 by Felix Leaman
+# Burst_Detection.py
+# Last updated: 17.08.2017 by Felix Leaman
 # Description:
 # Code for opening 2 x a .mat or .tdms data files with single channel and plotting different types of analysis
 # The file and channel is selected by the user
@@ -97,6 +97,8 @@ if args.power2 == None:
 	n_points = 2**(max_2power(len(x1)))
 x1 = x1[0:n_points]
 x2 = x2[0:n_points]	
+x1raw = x1
+x2raw = x2
 
 
 dt = 1.0/fs
@@ -110,15 +112,15 @@ config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':F
 'Cepstrum':False, 'Hist':False}
 
 
-config_filter = {'analysis':True, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
+config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
 
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
-config_diff = {'analysis':False, 'length':1, 'same':True}
+config_diff = {'analysis':True, 'length':1, 'same':True}
 
 
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
+config_demod = {'analysis':True, 'mode':'hilbert', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
 'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 50.0, 3]}
 #When hilbert is selected, the other parameters are ignored
 
@@ -126,23 +128,32 @@ config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-sca
 #colors= gray, inferno, Spectral, copper...
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
-#++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-fig = [[] for element in config_analysis if config_analysis[element] == True]
-fig.append([])
-fig[0], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x1, fs=fs, threshold=8*signal_rms(x1), t_window=0.002)
-ax[0].plot(t, x1, '-o')
-# ax[0].plot(t_burst_corr, amp_burst_corr, 'ro')
-ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1)
-ax[0].set_ylabel('Amplitude')
 
-# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x2, fs=fs, threshold=8*signal_rms(x2), t_window=0.002)
-ax[1].plot(t, x2, '-o')
-# ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
-ax[1].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename2)
-ax[1].set_ylabel('Amplitude')
-ax[1].set_xlabel('Time s')
-# plt.show()
+
+
+
+#++++++++++++++++++++++ RAW SIGNAL ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+fig = [[] for element in config_analysis if config_analysis[element] == True]
+# fig.append([])
+# fig[0], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+# # n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x1, fs=fs, threshold=8*signal_rms(x1), t_window=0.002)
+# ax[0].plot(t, x1, 'b')
+# # ax[0].plot(t_burst_corr, amp_burst_corr, 'ro')
+# ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1, fontsize=10)
+# ax[0].set_ylabel('Amplitude')
+
+# # n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x2, fs=fs, threshold=8*signal_rms(x2), t_window=0.002)
+# ax[1].plot(t, x2, 'b')
+# # ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
+# ax[1].set_title(filename2, fontsize=10)
+# ax[1].set_ylabel('Amplitude')
+# ax[1].set_xlabel('Time s')
+# # plt.show()
+
+# # sys.exit()
+
+
+#++++++++++++++++++++++SIGNAL PROCESSING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 #Filter
@@ -175,17 +186,7 @@ if config_autocorr['analysis'] == True:
 		fftx2 = np.fft.fft(x2)
 		x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
 
-#Differentiation
-if config_diff['analysis'] == True:
-	print('+++Differentiation:')
-	if config_diff['same'] == True:
-		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
-	elif config_diff['same'] == False:
-		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
-	else:
-		print('Error assignment diff')	
+
 		
 #Demodulation
 if config_demod['analysis'] == True:
@@ -202,7 +203,17 @@ if config_demod['analysis'] == True:
 		print('Error assignment demodulation')
 
 
-
+#Differentiation
+if config_diff['analysis'] == True:
+	print('+++Differentiation:')
+	if config_diff['same'] == True:
+		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
+	elif config_diff['same'] == False:
+		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
+	else:
+		print('Error assignment diff')	
 
 # print(scipy.signal.find_peaks_cwt(vector=x1, widths=np.arange(1, 4))*dt)
 
@@ -251,22 +262,68 @@ if config_analysis['Cepstrum'] == True:
 	cepstrumX1, tc, dtc = cepstrum_real(x1, fs)
 	cepstrumX2, tc, dtc = cepstrum_real(x2, fs)
 
+	
+#++++++++++++++++++++++ BURST DETECTION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+threshold1 = 7*signal_rms(x1)
+threshold2 = 7*signal_rms(x2)
+t_window1 = 0.002
+t_window2 = 0.002
+
+# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x1, fs=fs, threshold=threshold1, t_window=t_window1)
+# ax[0].plot(t, x1)
+# ax[0].plot(t_burst_corr, amp_burst_corr, 'ro')
+
+# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x2, fs=fs, threshold=threshold2, t_window=t_window2)
+# ax[1].plot(t, x2)
+# ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
+
+
 
 #++++++++++++++++++++++ MULTI PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-count = 1
+count = 0
 # fig = [[] for element in config_analysis if config_analysis[element] == True]
 for element in config_analysis:
+	Name = element
+	if config_filter['analysis'] == True:
+		Name = Name + ' FIL'
+	if config_autocorr['analysis'] == True:
+		Name = Name + ' ACR'
+
+	if config_demod['analysis'] == True:
+		Name = Name + ' ENV'
+		
+	if config_diff['analysis'] == True:
+		Name = Name + ' DIF'
+	
 	if config_analysis[element] == True:
 		if element == 'WFM':
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-			ax[0].plot(t, x1)
-			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=fs, threshold=threshold1, t_window=t_window1)
+			
+			ax[0].axhline(threshold1, color='k')
+			ax[0].plot(t, x1, color='darkblue')
+			ax[0].plot(t_burst_corr1, amp_burst_corr1, 'ro')
+			
+			
+			ax[0].set_title(channel + ' ' + Name + '\n' + filename1, fontsize=10)
 			ax[0].set_ylabel('Amplitude')
-
-			ax[1].plot(t, x2)
-			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			
+			
+			n_burst_corr2, t_burst_corr2, amp_burst_corr2, t_burst2, amp_burst2 = id_burst_threshold(x=x2, fs=fs, threshold=threshold2, t_window=t_window2)
+			ax[1].axhline(threshold2, color='k')
+			ax[1].plot(t, x2, color='darkblue')
+			ax[1].plot(t_burst_corr2, amp_burst_corr2, 'ro')
+			
+			ax[1].set_title(filename2, fontsize=10)
 			ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Time s')
+			
+			
+			
+			
+			
+			
+			
 
 		elif element == 'FFT':		
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
@@ -439,6 +496,42 @@ for element in config_analysis:
 			
 
 		count = count + 1
+#++++++++++++++++++++++ BURST DETECTION RAW +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+fig.append([])
+
+
+
+
+
+
+fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+
+# 
+
+# ax[1].plot(t, x2, 'b')
+# # ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
+# 
+
+# # plt.show()
+amp_burst_corr1 = np.array([x1raw[int(time*fs)] for time in t_burst_corr1])
+amp_burst_corr2 = np.array([x2raw[int(time*fs)] for time in t_burst_corr2])
+
+
+ax[0].plot(t, x1raw)
+ax[0].plot(t_burst_corr1, amp_burst_corr1, 'ro')
+ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1, fontsize=10)
+ax[0].set_ylabel('Amplitude')
+# ax[0].axhline(threshold1, color='k')
+
+ax[1].plot(t, x2raw)
+ax[1].plot(t_burst_corr2, amp_burst_corr2, 'ro')
+ax[1].set_title(filename2, fontsize=10)
+# ax[1].axhline(threshold2, color='k')
+ax[1].set_ylabel('Amplitude')
+ax[1].set_xlabel('Time s')
+# plt.show()
+# sys.exit()
+
 
 plt.show()
 
