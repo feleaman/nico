@@ -38,6 +38,7 @@ channel = 'AE_Signal'
 # mypath = 'M:\Betriebsmessungen\Getriebeprüfstand CNs\Getriebe_i_O_20160506\AE'
 # mypath = 'M:\Betriebsmessungen\Getriebeprüfstand CNs\Getriebe_i_O_20160506\AE'
 mypath = 'M:\Betriebsmessungen\Getriebeprüfstand CNs\Getriebe_Hohlradschaden\AE'
+mypath = 'M:\Betriebsmessungen\Getriebeprüfstand CNs\Getriebe_Hohlradschaden\AE'
 # n_points = 2**26 #Number of points of the signal, if None, it uses the total length in power of 2
 n_points = 2**20
 
@@ -75,7 +76,20 @@ features = [
 # 'LP17_FFT_0',
 # 'LP21_FFT_0',
 # 'LP24_FFT_0',
+'NBU_WFM_0',
+# 'NBU_WFM_1',
+'NBU_DIF_0',
+# 'NBU_DIF_1',
+'NBU_DIF_ENV_0',
+# 'NBU_DIF_ENV_1',
+# 'NBU_ENV_STF_BIN_0',
+# 'NBU_DIF_ENV_STF_BIN_0'
 ]
+
+
+
+
+
 
 features_dicts = [{} for feature in features]
 
@@ -94,7 +108,7 @@ for test in range(n_tests):
 			filename = [f for f in filenames if f.find(rpm) != -1 if f.find(load) != -1 if f[1] == str(test)]
 			if len(filename) != 1:
 				print('error file finding')
-				print(len(filename))
+				# print(len(filename))
 				sys.exit()
 			filename = filename[0]
 			filepath = join(mypath, filename)
@@ -103,13 +117,18 @@ for test in range(n_tests):
 			
 			x = x[0:n_points]	
 			magX, f, df = mag_fft(x, fs)
+			difX = diff_signal_eq(x=x, length_diff=1)
+			envdifX = butter_demodulation(x=difX, fs=fs, filter=['lowpass', 50.0, 3], prefilter=['bandpass',[180.0e3, 350.0e3], 3], 
+			type_rect='only_positives', dc_value='without_dc')
+			threshold = 8*signal_rms(x)
+			t_window = 0.002
 			
-				
 			# print(len(x))
 			# print(max_2power(len(x)))
 			# sys.exit()
 			for i in range(len(features)):
-				value = features_master(name=features[i], x=x, dt=dt, magX=magX, df=df)
+				print(i)
+				value = features_master(name=features[i], x=x, dt=dt, magX=magX, difX=difX, envdifX=envdifX, df=df, fs=fs, threshold=threshold, t_window=t_window)
 				features_lists[i].append(value)
 				print('Ready Feature ' + str(i) + ' from ' + str(len(features)))
 		

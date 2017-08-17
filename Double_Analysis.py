@@ -106,11 +106,11 @@ t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':True, 'STPSD':False,
+config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
 'Cepstrum':False, 'Hist':False}
 
 
-config_filter = {'analysis':False, 'name':'butter', 'type':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
+config_filter = {'analysis':True, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
 
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
@@ -126,34 +126,44 @@ config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-sca
 #colors= gray, inferno, Spectral, copper...
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
-
-quantile = 1000
 #++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 fig = [[] for element in config_analysis if config_analysis[element] == True]
 fig.append([])
 fig[0], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-ax[0].plot(t, x1)
+# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x1, fs=fs, threshold=8*signal_rms(x1), t_window=0.002)
+ax[0].plot(t, x1, '-o')
+# ax[0].plot(t_burst_corr, amp_burst_corr, 'ro')
 ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1)
 ax[0].set_ylabel('Amplitude')
 
-ax[1].plot(t, x2)
+# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x2, fs=fs, threshold=8*signal_rms(x2), t_window=0.002)
+ax[1].plot(t, x2, '-o')
+# ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
 ax[1].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename2)
 ax[1].set_ylabel('Amplitude')
 ax[1].set_xlabel('Time s')
+# plt.show()
+
 
 #Filter
 if config_filter['analysis'] == True:
+	print('+++Filter:')
 	if config_filter['type'] == 'bandpass':
+		print('Bandpass')
 		f_nyq = 0.5*fs
 		order = config_filter['params'][1]
 		freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
 		b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
 		x1 = signal.filtfilt(b, a, x1)
 		x2 = signal.filtfilt(b, a, x2)
-
+	elif config_filter['type'] == 'median':
+		print('Median')
+		x1 = scipy.signal.medfilt(x1)
+		x2 = scipy.signal.medfilt(x2)
 
 #Autocorrelation
 if config_autocorr['analysis'] == True:
+	print('+++Filter:')
 	if config_autocorr['type'] == 'definition':
 		x1 = np.correlate(x1, x1, mode=config_autocorr['mode'])
 		x2 = np.correlate(x2, x2, mode=config_autocorr['mode'])
@@ -167,6 +177,7 @@ if config_autocorr['analysis'] == True:
 
 #Differentiation
 if config_diff['analysis'] == True:
+	print('+++Differentiation:')
 	if config_diff['same'] == True:
 		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
 		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
@@ -178,6 +189,7 @@ if config_diff['analysis'] == True:
 		
 #Demodulation
 if config_demod['analysis'] == True:
+	print('+++Demodulation:')
 	if config_demod['mode'] == 'hilbert':
 		x1 = hilbert_demodulation(x1)
 		x2 = hilbert_demodulation(x2)

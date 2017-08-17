@@ -3,46 +3,72 @@ from scipy.integrate import odeint
 from scipy import signal
 from scipy import stats
 import scipy
+import sys
 
 
 
-
-def features_master(name, x=None, dt=None, magX=None, df=None):
+def features_master(name, x=None, dt=None, magX=None, df=None, difX=None, fs=None, envdifX=None, threshold=None, t_window=None):
 	if name == 'RMS_WFM_0':
-		value = signal_rms(x)
+		value = signal_rms(x=x)
 	
 	elif name == 'KURT_WFM_0':
 		value = stats.kurtosis(x, fisher=True)
 	
 	elif name == 'LP6_WFM_0':
-		value = lout_featp6(x)
+		value = lout_featp6(x=x)
 	
 	elif name == 'LP7_WFM_0':
-		value = lout_featp7(x)
+		value = lout_featp7(x=x)
 	
 	elif name == 'LP16_WFM_0':
-		value = lout_featp16(x, dt)
+		value = lout_featp16(x=x, dp=dt)
 	
 	elif name == 'LP17_WFM_0':
-		value = lout_featp17(x, dt)
+		value = lout_featp17(x=x, dp=dt)
 	
 	elif name == 'LP21_WFM_0':
-		value = lout_featp21(x, dt)
+		value = lout_featp21(x=x, dp=dt)
 	
 	elif name == 'LP24_WFM_0':
-		value = lout_featp24(x, dt)
+		value = lout_featp24(x=x, dp=dt)
 	
 	elif name == 'LP16_FFT_0':
-		value = lout_featp16(magX, df)
+		value = lout_featp16(x=magX, dp=df)
 	
 	elif name == 'LP17_FFT_0':
-		value = lout_featp17(magX, df)
+		value = lout_featp17(x=magX, dp=df)
 	
 	elif name == 'LP21_FFT_0':
-		value = lout_featp21(magX, df)
+		value = lout_featp21(x=magX, dp=df)
 	
 	elif name == 'LP24_FFT_0':
-		value = lout_featp24(magX, df)
+		value = lout_featp24(x=magX, dp=df)
+		
+	elif name == 'NBU_WFM_0':
+		value = id_burst_threshold(x=x, fs=fs, threshold=threshold, t_window=t_window)
+		value = value[0]
+	
+	# elif name == 'NBU_WFM_1':
+		# value = id_burst_threshold(x, fs, threshold, t_window)
+		# value = value[0]
+	
+	elif name == 'NBU_DIF_0':
+		value = id_burst_threshold(x=difX, fs=fs, threshold=threshold, t_window=t_window)
+		value = value[0]
+	# elif name == 'NBU_DIF_1':
+		# value = id_burst_threshold(x=difx, fs=fs, threshold=threshold, t_window=t_window)
+	
+	elif name == 'NBU_DIF_ENV_0':
+		value = id_burst_threshold(x=envdifX, fs=fs, threshold=threshold, t_window=t_window)
+		value = value[0]
+	# elif name == 'NBU_DIF_ENV_1':
+		# value = id_burst_threshold(x=difdemodx, fs=fs, threshold=threshold, t_window=t_window)
+	
+	# elif name == 'NBU_ENV_STF_BIN_0':
+		# value = ()
+	
+	# elif name == 'NBU_DIF_ENV_STF_BIN_0':
+		# value = ()		
 	
 	else:
 		print('error name feature')
@@ -141,26 +167,41 @@ def id_burst_threshold(x, fs, threshold, t_window):
 	t_burst = ind_burst*dt
 	amp_burst = np.array([x[ind_burst[i]] for i in range(n_burst)])
 	
-	t_burst_corr = []
-	amp_burst_corr = []
-	t_burst_corr.append(t_burst[0])
-	amp_burst_corr.append(amp_burst[0])
-	t_fix = t_burst[0]
-	for i in range(n_burst-1):
-		# check = t_burst[i+1] - t_burst[i]
-		check = t_burst[i+1] - t_fix
+	if n_burst > 0:
+		t_burst_corr = []
+		amp_burst_corr = []
+		t_burst_corr.append(t_burst[0])
+		amp_burst_corr.append(amp_burst[0])
+		t_fix = t_burst[0]
+		for i in range(n_burst-1):
+			# check = t_burst[i+1] - t_burst[i]
+			check = t_burst[i+1] - t_fix
 
-		if check > t_window:
-			t_burst_corr.append(t_burst[i+1])
-			t_fix = t_burst[i+1]
-			amp_burst_corr.append(amp_burst[i+1])
-	
-	n_burst_corr = len(t_burst_corr)
+			if check > t_window:
+				t_burst_corr.append(t_burst[i+1])
+				t_fix = t_burst[i+1]
+				amp_burst_corr.append(amp_burst[i+1])
+		
+		n_burst_corr = len(t_burst_corr)
+	else:
+		n_burst_corr = n_burst
+		t_burst_corr = t_burst
+		amp_burst_corr = amp_burst
 	
 	return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst
 
 	
+
 	
+	
+# 'NBU_WFM_0'
+# 'NBU_WFM_1'
+# 'NBU_DIF_0'
+# 'NBU_DIF_1'
+# 'NBU_DIF_ENV_0'
+# 'NBU_DIF_ENV_1'
+# 'NBU_ENV_STF_BIN_0'
+# 'NBU_DIF_ENV_STF_BIN_0'
 
 # x_demod = butter_demodulation(x=x, fs=fs, prefilter=['highpass', 50.0e3, 3], filter=['lowpass', 200.0, 3])
 
