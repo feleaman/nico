@@ -1,5 +1,5 @@
 # Double_Features.py
-# Last updated: 15.08.2017 by Felix Leaman
+# Last updated: 16.08.2017 15:58 by Felix Leaman
 # Description:
 # Code for opening 2 x a .mat or .tdms data files with single channel and plotting different types of analysis
 # The file and channel is selected by the user
@@ -8,12 +8,15 @@
 #++++++++++++++++++++++ IMPORT MODULES AND FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cm
 from tkinter import filedialog
 from tkinter import Tk
-
+from skimage import img_as_uint
+import skimage.filters
 import os.path
 import sys
-sys.path.insert(0, './lib')
+sys.path.insert(0, './lib') #to open user-defined functions
 
 from m_open_extension import *
 from m_fft import *
@@ -51,12 +54,7 @@ else:
 if args.power2 != None:
 	n_points = 2**int(args.power2)
 
-# print(channel)
-# print(n_points)
 
-# print(args.pos)
-# print(args.type)
-# sys.exit()
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -108,9 +106,11 @@ t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Quantile':False, 'Hist':False}
+config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':True, 'STPSD':False,
+'Cepstrum':False, 'Hist':False}
 
+
+config_filter = {'analysis':False, 'name':'butter', 'type':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
 
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
@@ -118,42 +118,65 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['highpass', 80.0e3, 3], 
-'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 200.0, 3]}
+config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
+'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 50.0, 3]}
 #When hilbert is selected, the other parameters are ignored
 
-
-
-
-config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
+config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'binary', 'color':'gray'}
+#colors= gray, inferno, Spectral, copper...
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
 quantile = 1000
 #++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+fig = [[] for element in config_analysis if config_analysis[element] == True]
+fig.append([])
+fig[0], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+ax[0].plot(t, x1)
+ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1)
+ax[0].set_ylabel('Amplitude')
+
+ax[1].plot(t, x2)
+ax[1].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename2)
+ax[1].set_ylabel('Amplitude')
+ax[1].set_xlabel('Time s')
+
+#Filter
+if config_filter['analysis'] == True:
+	if config_filter['type'] == 'bandpass':
+		f_nyq = 0.5*fs
+		order = config_filter['params'][1]
+		freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
+		b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
+		x1 = signal.filtfilt(b, a, x1)
+		x2 = signal.filtfilt(b, a, x2)
+
+
+#Autocorrelation
 if config_autocorr['analysis'] == True:
 	if config_autocorr['type'] == 'definition':
 		x1 = np.correlate(x1, x1, mode=config_autocorr['mode'])
 		x2 = np.correlate(x2, x2, mode=config_autocorr['mode'])
-	elif config_autocorr['type'] == 'wiener':		
-		# fftx1, f, df = mag_fft(x=x1, fs=fs)
-		# x1 = np.fft.ifft(fftx1**2.0)
-		# x1 = x1*len(x1)
-		
-		# fftx2, f, df = mag_fft(x=x2, fs=fs)
-		# x2 = np.fft.ifft(fftx2**2.0)
-		# x2 = x2*len(x2)
-		
-		
-		
+	
+	elif config_autocorr['type'] == 'wiener':	
 		fftx1 = np.fft.fft(x1)
 		x1 = np.real(np.fft.ifft(fftx1*np.conjugate(fftx1)))
 		
 		fftx2 = np.fft.fft(x2)
 		x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
-		
-		
 
+#Differentiation
+if config_diff['analysis'] == True:
+	if config_diff['same'] == True:
+		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
+	elif config_diff['same'] == False:
+		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
+	else:
+		print('Error assignment diff')	
+		
+#Demodulation
 if config_demod['analysis'] == True:
 	if config_demod['mode'] == 'hilbert':
 		x1 = hilbert_demodulation(x1)
@@ -166,24 +189,10 @@ if config_demod['analysis'] == True:
 	else:
 		print('Error assignment demodulation')
 
-if config_diff['analysis'] == True:
-	if config_diff['same'] == True:
-		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
-	elif config_diff['same'] == False:
-		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
-	else:
-		print('Error assignment diff')
-
-# print(signal_rms(x1))
-# print(np.std(x1))
-# print(np.mean(x1))
 
 
-# print(signal_rms(x2))
-# print(np.std(x2))
-# print(np.mean(x2))
+
+# print(scipy.signal.find_peaks_cwt(vector=x1, widths=np.arange(1, 4))*dt)
 
 
 
@@ -199,8 +208,8 @@ if config_analysis['STFT'] == True:
 	window = config_stft['window']
 	mode = config_stft['mode']
 	
-	stftX1, f_stft, df_stft, t_stft = shortFFT(x1[1000:len(x1)-1000], fs, segments, window, mode)
-	stftX2, f_stft, df_stft, t_stft = shortFFT(x2[1000:len(x2)-1000], fs, segments, window, mode)
+	stftX1, f_stft, df_stft, t_stft = shortFFT(x=x1, fs=fs, segments=segments, window=window, mode=mode)
+	stftX2, f_stft, df_stft, t_stft = shortFFT(x=x2, fs=fs, segments=segments, window=window, mode=mode)
 	if config_stft['log-scale'] == True:
 		stftX1 = np.log(stftX1)
 		stftX2 = np.log(stftX2)
@@ -217,8 +226,8 @@ if config_analysis['STPSD'] == True:
 	window = config_stPSD['window']
 	mode = config_stPSD['mode']
 	
-	stPSDX1, f_stPSD, df, t_stPSD = shortPSD(x1, fs, segments)
-	stPSDX2, f_stPSD, df, t_stPSD = shortPSD(x2, fs, segments)	
+	stPSDX1, f_stPSD, df, t_stPSD = shortPSD(x=x1, fs=fs, segments=segments)
+	stPSDX2, f_stPSD, df, t_stPSD = shortPSD(x=x2, fs=fs, segments=segments)	
 	if config_stPSD['log-scale'] == True:
 		stPSDX1 = np.log(stPSDX1)
 		stPSDX2 = np.log(stPSDX2)
@@ -230,28 +239,12 @@ if config_analysis['Cepstrum'] == True:
 	cepstrumX1, tc, dtc = cepstrum_real(x1, fs)
 	cepstrumX2, tc, dtc = cepstrum_real(x2, fs)
 
-#++++++++++++++++++++++ QUANTILE +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-if config_analysis['Quantile'] == True:
-	quant_x1 = np.percentile(x1, np.arange(0, 100, 100/quantile))
-	quant_x2 = np.percentile(x2, np.arange(0, 100, 100/quantile))
-
-	
-#++++++++++++++++++++++ AUTOCORR +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
 
 #++++++++++++++++++++++ MULTI PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-count = 0
-fig = [[] for element in config_analysis if config_analysis[element] == True]
+count = 1
+# fig = [[] for element in config_analysis if config_analysis[element] == True]
 for element in config_analysis:
 	if config_analysis[element] == True:
-		# count = count + 1
-		# fig.append(plt.figure(count))
-		
-		# plt.figure(count)
-		# plt.title(channel + ' ' + element)
-		# plt.suptitle(filename, fontsize=10)
 		if element == 'WFM':
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 			ax[0].plot(t, x1)
@@ -263,24 +256,20 @@ for element in config_analysis:
 			ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Time s')
 
-		elif element == 'FFT':
-		
-			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-			ax[0].plot(f, magX1)
+		elif element == 'FFT':		
+			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+			ax[0].plot(f, magX1, 'r')
 			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
 			ax[0].set_ylabel('Amplitude')
 
-			ax[1].plot(f, magX2)
-			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			ax[1].plot(f, magX2, 'r')
+			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
 			ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Frequency Hz')
 			
-			
-			
-			
-			
+		
 		elif element == 'PSD':		
-			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 			ax[0].plot(f_psd, psdX1)
 			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
 			ax[0].set_ylabel('Amplitude')
@@ -289,25 +278,98 @@ for element in config_analysis:
 			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
 			ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Frequency Hz')	
-		
-		
-		
-		
-		elif element == 'STFT':			
-			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-			ax[0].pcolormesh(t_stft, f_stft, stftX1)
-			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
-			ax[0].set_ylabel('Frequency Hz')
-			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
-				ax[0].set_ylim((0, config_demod['filter'][1]))
 			
+		
+		elif element == 'STFT':
+			if config_stft['type'] == 'colormesh':
+				fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+				map = ax[0].pcolormesh(t_stft, f_stft, stftX1, cmap=config_stft['color'])
+				ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+				ax[0].set_ylabel('Frequency Hz')			
+				fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[0].set_ylim((0, 1.5*config_demod['filter'][1]))
+				
+				map = ax[1].pcolormesh(t_stft, f_stft, stftX2, cmap=config_stft['color'])
+				ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+				ax[1].set_ylabel('Frequency Hz')
+				ax[1].set_xlabel('Time s')
+				fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[1].set_ylim((0, 1.5*config_demod['filter'][1]))
+			
+			
+			elif config_stft['type'] == 'image':
+				fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+				map = ax[0].imshow(stftX1, aspect='auto', interpolation='bilinear', cmap=config_stft['color'], vmax=abs(stftX2).max(), vmin=-abs(stftX2).max(), origin='lower')
+				ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+				ax[0].set_ylabel('Frequency Hz')			
+				fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[0].set_ylim((0, 1.5*config_demod['filter'][1]))
+				
+				map = ax[1].imshow(stftX2, aspect='auto', interpolation='bilinear', cmap=config_stft['color'], vmax=abs(stftX2).max(), vmin=-abs(stftX2).max(), origin='lower')
+				ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+				ax[1].set_ylabel('Frequency Hz')
+				ax[1].set_xlabel('Time s')
+				fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[1].set_ylim((0, 1.5*config_demod['filter'][1]))
+			
+			
+			
+			elif config_stft['type'] == 'binary':
+				# stftX1 = stftX1 / np.max(np.abs(stftX1))
 
-			ax[1].pcolormesh(t_stft, f_stft, stftX2)
-			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
-			ax[1].set_ylabel('Frequency Hz')
-			ax[1].set_xlabel('Time s')
-			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
-				ax[1].set_ylim((0, config_demod['filter'][1]))
+				stftX1 = img_as_uint(stftX1)
+				stftX1 = skimage.filters.median(image=stftX1, selem=np.ones((3, 3)))
+
+				
+				stftX2 = img_as_uint(stftX2)
+				stftX2 = skimage.filters.median(image=stftX2, selem=np.ones((3, 3)))
+				
+				
+				thr1 = skimage.filters.threshold_otsu(stftX1)
+				thr2 = skimage.filters.threshold_otsu(stftX2)
+				
+				
+				
+				for i in range(len(stftX1)):
+					for j in range(len(stftX1[0])):
+						if stftX1[i][j] > thr1:
+							stftX1[i][j] = 1
+						else:
+							stftX1[i][j] = 0
+						if stftX2[i][j] > thr2:
+							stftX2[i][j] = 1
+						else:
+							stftX2[i][j] = 0
+				
+				fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+				map = ax[0].pcolormesh(t_stft, f_stft, stftX1, cmap=config_stft['color'])
+				ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+				ax[0].set_ylabel('Frequency Hz')			
+				fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[0].set_ylim((0, 1.5*config_demod['filter'][1]))
+				
+				map = ax[1].pcolormesh(t_stft, f_stft, stftX2, cmap=config_stft['color'])
+				ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+				ax[1].set_ylabel('Frequency Hz')
+				ax[1].set_xlabel('Time s')
+				fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='neither')
+				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+					ax[1].set_ylim((0, 1.5*config_demod['filter'][1]))
+				
+				# binis = stftX1[0]				
+				# bursts = 0
+				# for s in range(len(binis)-1):
+					# if (binis[s] == 0 and binis[s+1] == 1):
+						# bursts = bursts + 1
+				# print(bursts)
+			
+			
+			
 			
 		elif element == 'STPSD':			
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
@@ -350,20 +412,7 @@ for element in config_analysis:
 			ax[1].set_ylabel('Number')
 			ax[1].set_xlabel('Quantile')	
 			
-		elif element == 'Hist':	
-			# hist1, jiji1 = np.histogram(x1, bins=100)
-			# hist2, jiji2 = np.histogram(x2, bins=100)
-			# hist1 = [hist1[i+1] - hist1[i] for i in range(len(hist1)-1)]
-			# hist2 = [hist2[i+1] - hist2[i] for i in range(len(hist2)-1)]		
-			# fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-			# ax[0].plot(jiji1[2:], hist1)
-			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
-			# ax[0].set_ylabel('Number')
-			# ax[1].plot(jiji2[2:],hist2)
-			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
-			# ax[1].set_ylabel('Number')
-			# ax[1].set_xlabel('Bins')
-			
+		elif element == 'Hist':				
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
 			ax[0].hist(x1)
 			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
