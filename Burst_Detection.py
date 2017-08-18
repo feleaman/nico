@@ -99,6 +99,10 @@ x1 = x1[0:n_points]
 x2 = x2[0:n_points]	
 x1raw = x1
 x2raw = x2
+# traw
+
+np.savetxt('defect_v3_n1500_m80.txt', x1)
+np.savetxt('ok_v3_n1500_m80.txt', x2)
 
 
 dt = 1.0/fs
@@ -108,7 +112,7 @@ t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
+config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
 'Cepstrum':False, 'Hist':False}
 
 
@@ -120,8 +124,8 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 config_diff = {'analysis':True, 'length':1, 'same':True}
 
 
-config_demod = {'analysis':True, 'mode':'hilbert', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
-'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 50.0, 3]}
+config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass',[100.0e3, 350.0e3], 3], 
+'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 80.0, 3], 'offwarming':False}
 #When hilbert is selected, the other parameters are ignored
 
 config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'binary', 'color':'gray'}
@@ -217,7 +221,22 @@ if config_diff['analysis'] == True:
 
 # print(scipy.signal.find_peaks_cwt(vector=x1, widths=np.arange(1, 4))*dt)
 
+if config_demod['offwarming'] == True:
+	# x1 = x1[20000:]
+	# x2 = x2[20000:]
+	# t = t[20000:]
+	x1[0:20000] = np.zeros(20000)
+	x2[0:20000] = np.zeros(20000)
+	# t = t[20000:]
 
+	threshold1 = 4*signal_rms(x1[2000:])
+	threshold2 = 4*signal_rms(x2[2000:])
+else:
+	threshold1 = 1.3*signal_rms(x1)
+	threshold2 = 1.3*signal_rms(x2)
+
+t_window1 = 0.002
+t_window2 = 0.002
 
 #++++++++++++++++++++++ FFT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if config_analysis['FFT'] == True:
@@ -264,10 +283,7 @@ if config_analysis['Cepstrum'] == True:
 
 	
 #++++++++++++++++++++++ BURST DETECTION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-threshold1 = 7*signal_rms(x1)
-threshold2 = 7*signal_rms(x2)
-t_window1 = 0.002
-t_window2 = 0.002
+
 
 # n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x1, fs=fs, threshold=threshold1, t_window=t_window1)
 # ax[0].plot(t, x1)
@@ -299,7 +315,7 @@ for element in config_analysis:
 		if element == 'WFM':
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=fs, threshold=threshold1, t_window=t_window1)
-			
+			print(n_burst_corr1)
 			ax[0].axhline(threshold1, color='k')
 			ax[0].plot(t, x1, color='darkblue')
 			ax[0].plot(t_burst_corr1, amp_burst_corr1, 'ro')
@@ -310,6 +326,7 @@ for element in config_analysis:
 			
 			
 			n_burst_corr2, t_burst_corr2, amp_burst_corr2, t_burst2, amp_burst2 = id_burst_threshold(x=x2, fs=fs, threshold=threshold2, t_window=t_window2)
+			print(n_burst_corr2)
 			ax[1].axhline(threshold2, color='k')
 			ax[1].plot(t, x2, color='darkblue')
 			ax[1].plot(t_burst_corr2, amp_burst_corr2, 'ro')

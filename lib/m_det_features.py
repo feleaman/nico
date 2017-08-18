@@ -22,7 +22,6 @@ def features_master(name, x=None, dt=None, magX=None, df=None, difX=None, fs=Non
 	
 	elif name == 'LP16_WFM_0':
 		value = lout_featp16(x=x, dp=dt)
-	
 	elif name == 'LP17_WFM_0':
 		value = lout_featp17(x=x, dp=dt)
 	
@@ -227,45 +226,46 @@ def id_burst_threshold(x, fs, threshold, t_window):
 	
 	# return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst
 	
-def id_burst_threshold3(x, fs, threshold, t_window):
-	n = len(x)
-	dt = 1.0/fs
-	ind_burst = []
-	for i in range(n):
-		if x[i] >= threshold:
-			ind_burst.append(i)
-	n_burst = len(ind_burst)
-	ind_burst = np.array(ind_burst)
+# def id_burst_threshold3(x, fs, threshold, t_window):
+	# n = len(x)
+	# dt = 1.0/fs
+	# ind_burst = []
+	# for i in range(n):
+		# if x[i] >= threshold:
+			# ind_burst.append(i)
+	# n_burst = len(ind_burst)
+	# ind_burst = np.array(ind_burst)
 	
-	t_burst = ind_burst*dt
-	amp_burst = np.array([x[ind_burst[i]] for i in range(n_burst)])
+	# t_burst = ind_burst*dt
+	# amp_burst = np.array([x[ind_burst[i]] for i in range(n_burst)])
 	
-	if n_burst > 0:
-		t_burst_corr = []
-		amp_burst_corr = []
-		t_burst_corr.append(t_burst[0])
-		amp_burst_corr.append(amp_burst[0])
-		t_fix = t_burst[0]
-		for i in range(n_burst-1):
-			# check = t_burst[i+1] - t_burst[i]
-			check = t_burst[i+1] - t_fix
+	# if n_burst > 0:
+		# t_burst_corr = []
+		# amp_burst_corr = []
+		# t_burst_corr.append(t_burst[0])
+		# amp_burst_corr.append(amp_burst[0])
+		# t_fix = t_burst[0]
+		# for i in range(n_burst-1):
+			# # check = t_burst[i+1] - t_burst[i]
+			# check = t_burst[i+1] - t_fix
 
-			if check > t_window:
-				t_burst_corr.append(t_burst[i+1])
-				t_fix = t_burst[i+1]
-				amp_burst_corr.append(amp_burst[i+1])
+			# if check > t_window:
+				# t_burst_corr.append(t_burst[i+1])
+				# t_fix = t_burst[i+1]
+				# amp_burst_corr.append(amp_burst[i+1])
 		
-		n_burst_corr = len(t_burst_corr)
-	else:
-		n_burst_corr = n_burst
-		t_burst_corr = t_burst
-		amp_burst_corr = amp_burst
+		# n_burst_corr = len(t_burst_corr)
+	# else:
+		# n_burst_corr = n_burst
+		# t_burst_corr = t_burst
+		# amp_burst_corr = amp_burst
 	
-	dur = np.zeros(n_burst_corr)
-	for i in range(n_burst_corr):
+	# dur = np.zeros(n_burst_corr)
+	# for i in range(n_burst_corr):
 		
-	
-	return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst	
+
+	# return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst	
+
 # 'NBU_WFM_0'
 # 'NBU_WFM_1'
 # 'NBU_DIF_0'
