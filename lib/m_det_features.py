@@ -189,7 +189,44 @@ def id_burst_threshold(x, fs, threshold, t_window):
 	
 	return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst
 
+
+def id_burst_threshold_end(x, fs, threshold, t_window, t_decay):
+	n = len(x)
+	dt = 1.0/fs
+	ind_burst = []
+	for i in range(n):
+		if x[i] >= threshold:
+			ind_burst.append(i)
+	n_burst = len(ind_burst)
+	ind_burst = np.array(ind_burst)
 	
+	t_burst = ind_burst*dt
+	amp_burst = np.array([x[ind_burst[i]] for i in range(n_burst)])
+	
+	if n_burst > 0:
+		t_burst_corr = []
+		amp_burst_corr = []
+		t_burst_corr.append(t_burst[0])
+		amp_burst_corr.append(amp_burst[0])
+		t_fix = t_burst[0]
+		for i in range(n_burst-1):
+			# check = t_burst[i+1] - t_burst[i]
+			check = t_burst[i+1] - t_fix
+
+			if check > t_window:
+				t_burst_corr.append(t_burst[i+1])
+				t_fix = t_burst[i+1]
+				amp_burst_corr.append(amp_burst[i+1])
+		
+		n_burst_corr = len(t_burst_corr)
+	else:
+		n_burst_corr = n_burst
+		t_burst_corr = t_burst
+		amp_burst_corr = amp_burst
+	
+	
+	
+	return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst
 # def id_burst_threshold2(x, fs, threshold, t_window):
 	# n = len(x)
 	# dt = 1.0/fs

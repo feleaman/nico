@@ -63,8 +63,8 @@ def butter_demodulation(x, fs, filter, prefilter=None, type_rect=None, dc_value=
 		b, a = signal.butter(order_filter, f_lowpass)
 		x_demod = signal.filtfilt(b, a, x_rect)
 	else:
-		print('Info: Filter should be Lowpass')
-		sys.exit()
+		x_demod = x_rect
+		print('No Filter Lowpass')
 	
 	return x_demod
 

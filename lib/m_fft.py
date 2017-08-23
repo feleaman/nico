@@ -5,7 +5,11 @@ from scipy import stats
 import scipy
 import math
 import time
-
+from m_denois import fourier_filter
+from m_denois import butter_bandpass
+from m_denois import butter_lowpass
+import matplotlib.pyplot as plt
+from m_demodulation import *
 
 def mag_fft(x, fs):
 	fftx = np.fft.fft(x)
@@ -17,7 +21,15 @@ def mag_fft(x, fs):
 	magX = fftx
 	return magX, f, df
 
-
+def mag2_fft(x, fs):
+	fftx = np.fft.fft(x)
+	fftx = np.abs(fftx)/len(fftx)
+	# fftx = 2*fftx[0:int(len(fftx)/2)]
+	tr = len(x)/fs
+	df = 1.0/tr
+	f = np.array([i*df for i in range(len(fftx))])
+	magX = fftx
+	return magX, f, df
 
 def shortFFT(x, fs, segments, window, mode):
 	nperseg = len(x)/segments
@@ -50,6 +62,103 @@ def shortPSD(x, fs, segments):
 	df = f_stpsd[2] - f_stpsd[1]
 	return stpsdX, f_stpsd, df, t_stpsd	
 
+
+def Cyclic_Spectrum(x, fs, segments, freq_range):
+	n_x = len(x)
+	# f_max = fs/2.0
+	freqs_limits = np.linspace(start=freq_range[0], stop=freq_range[1], num=segments+1)
+	
+	
+	filtered_x = []
+	for p in range(segments):
+		# print(x)
+		resp = x
+		# filtered_x.append(fourier_filter(x=x, fs=fs, type='bandpass', freqs=[p*f_range, (p+1)*f_range]))
+		filtered_x.append(butter_bandpass(x=x, fs=fs, freqs=[freqs_limits[p], freqs_limits[p+1]], order=3, warm=400))
+		# if p == 0:
+			# plt.figure(1)
+			# plt.plot(resp)
+			# plt.figure(2)
+			# plt.plot(filtered_x[p])
+			# plt.show()
+	
+	
+	
+	# plt.plot(filtered_x[20])
+	# plt.show()
+	CyclicSpectrum = []
+	maxvec = []
+	for i in range(segments):
+		print(i)
+		# a_CyclicSpectrum, CyclicSpectrumWindow = signal.periodogram(x=filtered_x[i], fs=fs, return_onesided=True, scaling='spectrum')
+		CyclicSpectrumWindow = filtered_x[i]**2.0
+		resp = CyclicSpectrumWindow
+		# CyclicSpectrumWindow = CyclicSpectrumWindow - np.mean(CyclicSpectrumWindow)
+		# CyclicSpectrumWindow = CyclicSpectrumWindow/2.0
+		# CyclicSpectrumWindow = hilbert_demodulation(CyclicSpectrumWindow)
+		CyclicSpectrumWindow = butter_lowpass(x=resp, fs=fs, freq=1000.0, order=3, warm=None)
+		# CyclicSpectrumWindow = imean(CyclicSpectrumWindow)
+		# data = CyclicSpectrumWindow
+		# CyclicSpectrumWindow = np.zeros(len(data))
+		# sum = 0.0
+		# for p in range(len(data)):
+			# sum = sum + data[p]
+			# CyclicSpectrumWindow[p] = sum/(p+1)
+		
+		CyclicSpectrumWindow, a_CyclicSpectrum, da = mag_fft(CyclicSpectrumWindow, fs)
+		CyclicSpectrumWindow = CyclicSpectrumWindow[0:int(1000/da)]
+		a_CyclicSpectrum = a_CyclicSpectrum[0:int(1000/da)]
+		# print(len(a_CyclicSpectrum))
+		# sys.exit()
+		# maxvec.append(np.max(CyclicSpectrumWindow))
+		CyclicSpectrum.append(CyclicSpectrumWindow)
+		
+		
+		
+		# a_CyclicSpectrum = np.array([u for u in range(len(CyclicSpectrumWindow))])
+		
+		# if i == 0:
+			# plt.figure(1)
+			# plt.plot(resp)
+			# plt.figure(2)
+			# plt.plot(CyclicSpectrum[i])
+			# plt.show()
+	
+	
+	# f_CyclicSpectrum = [i*f_range for i in range(segments)]
+	f_CyclicSpectrum = freqs_limits
+	# print(len(CyclicSpectrum[0]))
+	# sys.exit()
+	# for f in range(len(CyclicSpectrum)):
+		# for a in range(int(len(CyclicSpectrum[0])/2)):
+		# # try:
+			# # CyclicSpectrum[a][f] = CyclicSpectrum[a][f] / ((CyclicSpectrum[0][int(f + a/2)])*(CyclicSpectrum[0][int(f - a/2)])**0.5)**0.5
+		# # except:
+			# # CyclicSpectrum[a][f] = CyclicSpectrum[a][f] / ((CyclicSpectrum[0][int(f)])*(CyclicSpectrum[0][int(f)])**0.5)**0.5
+		# print(int(f + a/2))
+		# print(int(f - a/2))
+		# try:
+			# CyclicSpectrum[f][a] = CyclicSpectrum[f][a] / ((CyclicSpectrum[int(f + a/2)][0])*(CyclicSpectrum[int(f - a/2)][0])**0.5)**0.5
+		# except:
+			# # print(f)
+			# # print(a)
+			# CyclicSpectrum[f][a] = CyclicSpectrum[f][a] / ((CyclicSpectrum[int(f)][0])*(CyclicSpectrum[int(f)][0])**0.5)**0.5
+				
+	
+	# print(np.max(maxvec))
+	# print(np.argmax(maxvec, axis=0))
+	
+	return CyclicSpectrum, a_CyclicSpectrum, f_CyclicSpectrum
+
+def imean(x):
+	n = len(x)
+	imeanx = np.zeros(n)
+	for i in range(n):
+		acu_mean = np.sum(x[0:i])/i
+		imeanx[i] = acu_mean
+	return imeanx
+	
+	
 def wv_dis(x, fs):
 
 	dt = 1.0/fs

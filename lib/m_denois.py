@@ -22,6 +22,7 @@ def fourier_filter(x, fs, type, freqs):
 		n_harmonics = int((f_high - f_low)/df)
 		
 		for i in range(n_x):
+			print(i/n_x*100)
 			sum = 0
 			for j in range(n_harmonics):
 				sum = sum + magX[j+f_low/df]*np.cos(2*math.pi*(j*df+f_low)*(i*dt) + phaX[j+f_low/df])
@@ -43,6 +44,7 @@ def fourier_filter(x, fs, type, freqs):
 		n_harmonics = int((f_max - f_highpass)/df)
 		
 		for i in range(n_x):
+			
 			sum = 0
 			for j in range(n_harmonics):
 				sum = sum + magX[j+f_highpass/df]*np.cos(2*math.pi*(j*df+f_highpass)*(i*dt) + phaX[j+f_highpass/df])
@@ -63,5 +65,37 @@ def fourier_filter(x, fs, type, freqs):
 	else:
 		print('Filter type error')
 	
-	return x_filt
 	
+
+def butter_bandpass(x, fs, freqs, order, warm=None):
+	f_nyq = 0.5*fs
+	
+	
+	#Pre-filter
+
+
+	freqs_bandpass = [freqs[0]/f_nyq, freqs[1]/f_nyq]
+	b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
+	x_filt = signal.filtfilt(b, a, x)
+	
+	if warm != None:
+		x_filt = x_filt[warm:]
+	
+	return x_filt
+
+
+def butter_lowpass(x, fs, freq, order, warm=None):
+	f_nyq = 0.5*fs
+	
+	
+	#Pre-filter
+
+
+	freq = freq/f_nyq
+	b, a = signal.butter(order, freq, btype='lowpass')
+	x_filt = signal.filtfilt(b, a, x)
+	
+	if warm != None:
+		x_filt = x_filt[warm:]
+	
+	return x_filt

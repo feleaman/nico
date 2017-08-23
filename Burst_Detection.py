@@ -40,6 +40,8 @@ parser.add_argument('--channel', nargs='?')
 
 
 parser.add_argument('--power2', nargs='?')
+parser.add_argument('--showplot', nargs='?')
+
 # n_points = 2**power2
 
 parser.add_argument('--type', nargs='?')
@@ -54,17 +56,28 @@ else:
 if args.power2 != None:
 	n_points = 2**int(args.power2)
 
-
+if args.showplot != None:
+	showplot = args.showplot
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
 
-root = Tk()
-root.withdraw()
-root.update()
-filename1 = filedialog.askopenfilename()
-filename2 = filedialog.askopenfilename()
+# root = Tk()
+# root.withdraw()
+# root.update()
+mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
+from os.path import isfile, join
 
-root.destroy()
+
+filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+filename2 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
+
+
+# filename1 = filedialog.askopenfilename()
+# filename2 = filedialog.askopenfilename()
+
+# root.destroy()
+# print(filename1)
+# sys.exit()
 
 point_index = filename1.find('.')
 extension = filename1[point_index+1] + filename1[point_index+2] + filename1[point_index+3]
@@ -99,24 +112,24 @@ x1 = x1[0:n_points]
 x2 = x2[0:n_points]	
 x1raw = x1
 x2raw = x2
-# traw
 
-np.savetxt('defect_v3_n1500_m80.txt', x1)
-np.savetxt('ok_v3_n1500_m80.txt', x2)
+# np.savetxt('defect_v3_n1500_m80.txt', x1)
+# np.savetxt('ok_v3_n1500_m80.txt', x2)
 
 
 dt = 1.0/fs
 n_points = len(x1)
 tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
+traw = t
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Hist':False}
+config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
+'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
 
 
-config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
+config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
@@ -124,16 +137,21 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 config_diff = {'analysis':True, 'length':1, 'same':True}
 
 
-config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass',[100.0e3, 350.0e3], 3], 
-'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 80.0, 3], 'offwarming':False}
+config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
+'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3], 'offwarming':True}
 #When hilbert is selected, the other parameters are ignored
 
-config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'binary', 'color':'gray'}
+config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'colormesh', 'color':'gray'}
 #colors= gray, inferno, Spectral, copper...
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
+config_CyclicSpectrum = {'segments':100, 'freq_range':[10.0e3, 450.0e3], 'window':'hanning', 'mode':'magnitude', 'log':True}
 
+# config_analysis['CyclicSpectrum'] == True:
+	# segments = config_CyclicSpectrum['segments']
+	# window = config_CyclicSpectrum['window']
+	# mode = config_CyclicSpectrum['mode']
 
 
 #++++++++++++++++++++++ RAW SIGNAL ++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -219,21 +237,17 @@ if config_diff['analysis'] == True:
 	else:
 		print('Error assignment diff')	
 
-# print(scipy.signal.find_peaks_cwt(vector=x1, widths=np.arange(1, 4))*dt)
-
-if config_demod['offwarming'] == True:
-	# x1 = x1[20000:]
-	# x2 = x2[20000:]
-	# t = t[20000:]
-	x1[0:20000] = np.zeros(20000)
-	x2[0:20000] = np.zeros(20000)
-	# t = t[20000:]
-
-	threshold1 = 4*signal_rms(x1[2000:])
-	threshold2 = 4*signal_rms(x2[2000:])
-else:
-	threshold1 = 1.3*signal_rms(x1)
-	threshold2 = 1.3*signal_rms(x2)
+warm = 0.0
+if (config_demod['offwarming'] == True and config_demod['mode'] == 'butter'):
+	warm = 20000
+	x1 = x1[warm:]
+	x2 = x2[warm:]
+	t = t[warm:]
+	warm = float(warm)
+fak = 6.44
+print(fak)
+threshold1 = fak*signal_rms(x1)
+threshold2 = fak*signal_rms(x2)
 
 t_window1 = 0.002
 t_window2 = 0.002
@@ -262,6 +276,8 @@ if config_analysis['PSD'] == True:
 	f_psd, psdX1 = signal.periodogram(x1, fs, return_onesided=True, scaling='density')
 	f_psd, psdX2 = signal.periodogram(x2, fs, return_onesided=True, scaling='density')
 
+
+	
 #++++++++++++++++++++++ STPSD +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if config_analysis['STPSD'] == True:
 	segments = config_stPSD['segments']
@@ -274,6 +290,18 @@ if config_analysis['STPSD'] == True:
 		stPSDX1 = np.log(stPSDX1)
 		stPSDX2 = np.log(stPSDX2)
 
+#++++++++++++++++++++++ CYCLIC SPECTRUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if config_analysis['CyclicSpectrum'] == True:
+	segments = config_CyclicSpectrum['segments']
+	window = config_CyclicSpectrum['window']
+	mode = config_CyclicSpectrum['mode']
+	freq_range = config_CyclicSpectrum['freq_range']
+	
+	CyclicSpectrum1, a_CyclicSpectrum1, f_CyclicSpectrum1 = Cyclic_Spectrum(x=x1, fs=fs, segments=segments, freq_range=freq_range)
+	CyclicSpectrum2, a_CyclicSpectrum2, f_CyclicSpectrum2 = Cyclic_Spectrum(x=x2, fs=fs, segments=segments, freq_range=freq_range)	
+	if config_CyclicSpectrum['log'] == True:
+		CyclicSpectrum1 = np.log(CyclicSpectrum1)
+		CyclicSpectrum2 = np.log(CyclicSpectrum2)
 
 #++++++++++++++++++++++ CEPSTRUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -316,6 +344,12 @@ for element in config_analysis:
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=fs, threshold=threshold1, t_window=t_window1)
 			print(n_burst_corr1)
+			
+			t_burst_corr1 = t_burst_corr1 + np.ones(len(t_burst_corr1))*warm*dt
+			
+			
+			
+			
 			ax[0].axhline(threshold1, color='k')
 			ax[0].plot(t, x1, color='darkblue')
 			ax[0].plot(t_burst_corr1, amp_burst_corr1, 'ro')
@@ -327,6 +361,7 @@ for element in config_analysis:
 			
 			n_burst_corr2, t_burst_corr2, amp_burst_corr2, t_burst2, amp_burst2 = id_burst_threshold(x=x2, fs=fs, threshold=threshold2, t_window=t_window2)
 			print(n_burst_corr2)
+			t_burst_corr2 = t_burst_corr2 + np.ones(len(t_burst_corr2))*warm*dt
 			ax[1].axhline(threshold2, color='k')
 			ax[1].plot(t, x2, color='darkblue')
 			ax[1].plot(t_burst_corr2, amp_burst_corr2, 'ro')
@@ -472,8 +507,24 @@ for element in config_analysis:
 			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
 				ax[1].set_ylim((0, config_demod['filter'][1]))
 			
-			
-			
+		elif element == 'CyclicSpectrum':			
+			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+			map = ax[0].pcolormesh(a_CyclicSpectrum1, f_CyclicSpectrum1, CyclicSpectrum1)
+			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+			ax[0].set_ylabel('Frequency Hz')
+			fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[0].set_ylim((0, config_demod['filter'][1]))
+
+			map = ax[1].pcolormesh(a_CyclicSpectrum2, f_CyclicSpectrum2, CyclicSpectrum2)
+			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			ax[1].set_ylabel('öFrequency Hz')
+			ax[1].set_xlabel('Cyclic Frequency Hz')
+			fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='both', extendfrac=0)
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
+				ax[1].set_ylim((0, config_demod['filter'][1]))
+		
+		
 			
 		elif element == 'Cepstrum':		
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
@@ -523,31 +574,39 @@ fig.append([])
 
 fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 
-# 
+# # 
 
-# ax[1].plot(t, x2, 'b')
-# # ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
-# 
+# # ax[1].plot(t, x2, 'b')
+# # # ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
+# # 
 
-# # plt.show()
+# # # plt.show()
+# # if config_demod['offwarming'] == True:
+	# # sum = 20000
+# # else:
+	# # sum = 0
+# # t_burst_corr1xx = t_burst_corr1 + np.ones(len(t_burst_corr1))*sum*dt
+# # t_burst_corr2xx = t_burst_corr2 + np.ones(len(t_burst_corr2))*sum*dt
+
+
 amp_burst_corr1 = np.array([x1raw[int(time*fs)] for time in t_burst_corr1])
 amp_burst_corr2 = np.array([x2raw[int(time*fs)] for time in t_burst_corr2])
 
 
-ax[0].plot(t, x1raw)
+ax[0].plot(traw, x1raw)
 ax[0].plot(t_burst_corr1, amp_burst_corr1, 'ro')
 ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1, fontsize=10)
 ax[0].set_ylabel('Amplitude')
 # ax[0].axhline(threshold1, color='k')
 
-ax[1].plot(t, x2raw)
+ax[1].plot(traw, x2raw)
 ax[1].plot(t_burst_corr2, amp_burst_corr2, 'ro')
 ax[1].set_title(filename2, fontsize=10)
 # ax[1].axhline(threshold2, color='k')
 ax[1].set_ylabel('Amplitude')
 ax[1].set_xlabel('Time s')
 # plt.show()
-# sys.exit()
+# # sys.exit()
 
 
 plt.show()
