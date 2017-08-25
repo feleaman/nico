@@ -72,8 +72,10 @@ def read_pickle(pickle_name):
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
 filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
 
-config_analysis = {'WindowTime':0.002, 'Overlap':True, 'WindowAdvance':0.8, 'savepik':True}
+config_analysis = {'WindowTime':0.002, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
+'channel':args.channel}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
@@ -87,9 +89,9 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-pickle_name_model = 'clf_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl'
-pickle_name_classification = 'classification_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl'
-
+pickle_name_model = 'clf_20170825_132430_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
+pickle_name_classification = 'classification_20170825_130754_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl'
+# pickle_name_classification = 'classification_20170825_131643_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl'
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
 point_index = filename1.find('.')
@@ -193,7 +195,8 @@ if (config_demod['analysis'] == True or config_filter['analysis'] == True):
 
 
 #++++++++++++++++++++++ TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-clf = read_pickle(pickle_name_model)
+info_model = read_pickle(pickle_name_model)
+clf = info_model[1]
 info_classification = read_pickle(pickle_name_classification)
 
 if info_classification['filename'] != filename1:
@@ -229,18 +232,44 @@ for count in range(n_windows):
 
 fp = 0
 fn = 0
-vp = 0
-vn = 0
+tp = 0
+tn = 0
 for window, label in zip(windows, classification):
 	prediction = clf.predict(window)
 	print('+++++++++++')
-	print(prediction[0])
-	print(label)
+	print('Prediction: ', prediction[0])
+	print('Reality: ', label)
 	print(type(prediction[0]))
 	print(type(label))
 	if prediction[0] == int(label):
-		print('!!!!!!!!!!!!!!!!!!!!!!!')		
-		
+		print('!!!!!!!!!!!!!!!!!!!!!!!')
+		if int(label) == 1:
+			tp = tp + 1
+		elif int(label) == 0:
+			tn = tn + 1
+		else:
+			print('Problem with labels')
+			sys.exit()
+	else:
+		print('......................')
+		if int(label) == 1:
+			fn = fn + 1
+		elif int(label) == 0:
+			fp = fp + 1
+		else:
+			print('Problem with labels')
+			sys.exit()
+print('False Negatives: ', fn)
+print('False Positives: ', fp)
+print('True Negatives: ', tn)
+print('True Positives: ', tp)
+print('Total: ', len(classification))
+recall = 
+precision = 
+accuracy =
+
+info_results = ['FN', fn, 'FP', fp, 'TN', tn, 'TP', tp, 'Total', len(classification),
+'Recall', 'Precision', 'Accuracy']
 
 sys.exit()
 

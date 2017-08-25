@@ -26,6 +26,7 @@ from m_processing import *
 from os.path import isfile, join
 import pickle
 import argparse
+import datetime
 
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
@@ -62,15 +63,65 @@ def save_pickle(pickle_name, pickle_data):
 	pickle.dump(pickle_data, pik)
 	pik.close()
 
+def plot_windows():	
+	if config_analysis['Overlap'] == True:
+		fig, ax = plt.subplots(nrows=1, ncols=2)
+		fig.set_size_inches(14.5, 4.5)
+		ax[0].axvline(x=t[count*window_advance]+window_time*0.25, color='red')
+		ax[0].axvline(x=t[count*window_advance]+window_time*0.75, color='red')
+		ax[0].plot(t[count*window_advance:window_points+window_advance*count], x1[count*window_advance:window_points+window_advance*count])
+		
+		ax[1].axvline(x=t[count*window_advance]+window_time*0.25, color='red')
+		ax[1].axvline(x=t[count*window_advance]+window_time*0.75, color='red')
+		ax[1].plot(t, x1)
+		ax[1].set_xlim(left=t[count*window_advance]-window_time*7, right=t[count*window_advance]+window_time*7)
+			
+	else:
+		fig, ax = plt.subplots(nrows=1, ncols=2)
+		fig.set_size_inches(14.5, 4.5)
+		ax[0].plot(t[count*window_points:(count+1)*window_points], x1[count*window_points:(count+1)*window_points])
+		ax[0].axvline(x=t[count*window_points], color='magenta')
+		ax[0].axvline(x=t[count*window_points]+window_time, color='magenta')
+		
+		ax[1].axvline(x=t[count*window_points], color='magenta')
+		ax[1].axvline(x=t[count*window_points]+window_time, color='magenta')
+		ax[1].plot(t, x1)
+		ax[1].set_xlim(left=t[count*window_points]-window_time*7, right=t[count*window_points]+window_time*7)
+	plt.title('Window N ' + str(count))
+	plt.show(block=False)
+
+
+
 def Start():
 	global count
 	print("start")
-	# plt.close()
 	count = 0
-	print('Window N ', count)
-	plt.plot(t[0:window_points], x1[0:window_points])
+	if config_analysis['Overlap'] == True:
+		fig, ax = plt.subplots(nrows=1, ncols=2)
+		fig.set_size_inches(14.5, 4.5)
+		ax[0].axvline(x=t[0]+window_time*0.25, color='red')
+		ax[0].axvline(x=t[0]+window_time*0.75, color='red')
+		ax[0].plot(t[0:window_points], x1[0:window_points])
+
+		ax[1].axvline(x=t[count*window_advance]+window_time*0.25, color='red')
+		ax[1].axvline(x=t[count*window_advance]+window_time*0.75, color='red')
+		ax[1].plot(t, x1)
+		ax[1].set_xlim(left=t[count*window_advance]-window_time*7, right=t[count*window_advance]+window_time*7)
+	
+	else:
+		fig, ax = plt.subplots(nrows=1, ncols=2)
+		fig.set_size_inches(14.5, 4.5)
+		ax[0].plot(t[0:window_points], x1[0:window_points])
+		ax[0].axvline(x=t[0], color='magenta')
+		ax[0].axvline(x=t[window_points], color='magenta')
+		
+		ax[1].axvline(x=t[0], color='magenta')
+		ax[1].axvline(x=t[0]+window_time, color='magenta')
+		ax[1].plot(t, x1)
+		ax[1].set_xlim(left=t[0]-window_time*7, right=t[0]+window_time*7)
 	plt.title('Window N ' + str(count))
 	plt.show(block=False)
+	
 
 def Positive():
 	global count
@@ -80,12 +131,7 @@ def Positive():
 	classification.append(1)
 	plt.close()
 	if count < n_windows:
-		if config_analysis['Overlap'] == True:
-			plt.plot(t[count*window_advance:window_points+window_advance*count], x1[count*window_advance:window_points+window_advance*count])
-		else:
-			plt.plot(t[count*window_points:(count+1)*window_points], x1[count*window_points:(count+1)*window_points])
-		plt.title('Window N ' + str(count))
-		plt.show(block=False)
+		plot_windows()
 	else:
 		print("Positive")
 		plt.close()
@@ -100,12 +146,7 @@ def Negative():
 	classification.append(0)
 	plt.close()
 	if count < n_windows:
-		if config_analysis['Overlap'] == True:
-			plt.plot(t[count*window_advance:window_points+window_advance*count], x1[count*window_advance:window_points+window_advance*count])
-		else:
-			plt.plot(t[count*window_points:(count+1)*window_points], x1[count*window_points:(count+1)*window_points])
-		plt.title('Window N ' + str(count))
-		plt.show(block=False)
+		plot_windows()
 	else:
 		print("Negative")
 		plt.close()
@@ -119,12 +160,7 @@ def Discard():
 	classification.append(2)
 	plt.close()
 	if count < n_windows:
-		if config_analysis['Overlap'] == True:
-			plt.plot(t[count*window_advance:window_points+window_advance*count], x1[count*window_advance:window_points+window_advance*count])
-		else:
-			plt.plot(t[count*window_points:(count+1)*window_points], x1[count*window_points:(count+1)*window_points])
-		plt.title('Window N ' + str(count))
-		plt.show(block=False)
+		plot_windows()
 	else:
 		print("Discard")
 		plt.close()
@@ -138,10 +174,18 @@ def Quit():
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
-filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+#TEST
+# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
+# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
 
-config_analysis = {'WindowTime':0.002, 'Overlap':True, 'WindowAdvance':0.8, 'savepik':True}
+#TRAIN
+mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/train'
+# filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
+filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160506_142422.mat')
+
+config_analysis = {'WindowTime':0.002, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
+'channel':args.channel}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
@@ -327,11 +371,13 @@ ax.plot(t, x1)
 plt.grid()
 plt.show()
 
-if config_analysis['savepik'] == True:
-	save_pickle('classification_' + str(filename1[:-4]) + '.pkl', info)
 
-# import datetime
-# print(datetime.datetime.now().strftime("%y-%m-%d-%H-%M"))
+stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+if config_analysis['savepik'] == True:
+	save_pickle('classification_' + stamp + '_' + str(filename1[:-4]) + '.pkl', info)
+
+
 
 
 

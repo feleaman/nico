@@ -28,7 +28,7 @@ import pickle
 import argparse
 from sklearn.neural_network import MLPClassifier
 
-import datetime
+
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
@@ -70,13 +70,16 @@ def read_pickle(pickle_name):
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
+# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
+# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+
 mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/train'
 filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
-pickle_classification = 'classification_20170825_131154_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
+
+pickle_classification = 'classification_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
 
 
-config_analysis = {'WindowTime':0.002, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
-'channel':args.channel}
+config_analysis = {'WindowTime':0.003, 'Overlap':True, 'WindowAdvance':0.4, 'savepik':True}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
@@ -88,10 +91,6 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 #When hilbert is selected, the other parameters are ignored
 
 config_diff = {'analysis':False, 'length':1, 'same':True}
-
-config_NNmodel = {'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(300, 10),
-'random_state':1, 'activation':'tanh', 'tol':1.e-6, 'max_iter':500}
-
 
 
 
@@ -192,7 +191,7 @@ if (config_demod['analysis'] == True or config_filter['analysis'] == True):
 
 
 
-#++++++++++++++++++++++ TRAINING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++ CHECK +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 info_classification = read_pickle(pickle_classification)
 if info_classification['filename'] != filename1:
 	print('Wrong filename!!!')
@@ -209,6 +208,10 @@ if config_analysis['Overlap'] == True:
 else:
 	n_windows = int(n_points/window_points)
 print('Number of windows: ', n_windows)
+print(type(info_classification['n_windows']))
+print(type(n_windows))
+print(info_classification['n_windows'])
+print(n_windows)
 if info_classification['n_windows'] != n_windows:
 	print('Wrong n_windows!!!')
 	sys.exit()
@@ -221,27 +224,12 @@ for count in range(n_windows):
 
 	
 
-# Neuronal Network
-clf = MLPClassifier(solver=config_NNmodel['solver'], alpha=config_NNmodel['alpha'],
-hidden_layer_sizes=config_NNmodel['hidden_layer_sizes'], random_state=config_NNmodel['random_state'],
-activation=config_NNmodel['activation'], tol=config_NNmodel['tol'], verbose=True,
-max_iter=config_NNmodel['max_iter'])
-
-
-clf.fit(windows, classification)
-
-
-# Save pickle model
-pickle_info = [config_NNmodel, clf]
-
-stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-save_pickle('clf_' + stamp + '_'  + str(filename1[:-4]) + '.pkl', pickle_info)
-
-# 
-# print(datetime.datetime.now().strftime("%y-%m-%d-%H-%M"))
-
-sys.exit()
-
-
-
-
+# Check
+window_check = 0
+while window_check != -1:	
+	count = window_check
+	plt.plot(windows[window_check])
+	print(classification[window_check])
+	plt.show()
+	window_check = input('Window to check: ')
+	window_check = int(window_check)
