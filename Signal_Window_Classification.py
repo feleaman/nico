@@ -63,7 +63,7 @@ def save_pickle(pickle_name, pickle_data):
 	pickle.dump(pickle_data, pik)
 	pik.close()
 
-def plot_windows():	
+def plot_windows():
 	if config_analysis['Overlap'] == True:
 		fig, ax = plt.subplots(nrows=1, ncols=2)
 		fig.set_size_inches(14.5, 4.5)
@@ -94,8 +94,11 @@ def plot_windows():
 
 def Start():
 	global count
+	global classification
 	print("start")
 	count = 0
+	classification = []
+
 	if config_analysis['Overlap'] == True:
 		fig, ax = plt.subplots(nrows=1, ncols=2)
 		fig.set_size_inches(14.5, 4.5)
@@ -121,10 +124,25 @@ def Start():
 		ax[1].set_xlim(left=t[0]-window_time*7, right=t[0]+window_time*7)
 	plt.title('Window N ' + str(count))
 	plt.show(block=False)
-	
+
+def Maybe():
+	global count
+	global classification
+	print("Maybe")
+	count = count + 1
+	print('Window N ', count)
+	classification.append(2)
+	plt.close()
+	if count < n_windows:
+		plot_windows()
+	else:
+		print("Maybe")
+		plt.close()
+		Quit()
 
 def Positive():
 	global count
+	global classification
 	print("Positive")
 	count = count + 1
 	print('Window N ', count)
@@ -140,6 +158,7 @@ def Positive():
 
 def Negative():
 	global count
+	global classification
 	print("Negative")
 	count = count + 1
 	print('Window N ', count)
@@ -154,10 +173,11 @@ def Negative():
 
 def Discard():
 	global count
+	global classification
 	print("Discard")
 	count = count + 1
 	print('Window N ', count)
-	classification.append(2)
+	classification.append(3)
 	plt.close()
 	if count < n_windows:
 		plot_windows()
@@ -168,23 +188,96 @@ def Discard():
 
 def Quit():
 	global count
+	global classification
 	print("quit")
 	plt.close()
 	root.destroy()
 
+def Save():
+	global count
+	global classification
+	print("Save")
+	stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+	np.savetxt('saveclassification_' + stamp + '_' + str(filename1[:-4]) + '.txt', classification)
 
+
+def StartOld():
+	global count
+	global classification
+	print("start with old file")
+	rootsave = Tk()
+	rootsave.withdraw()
+	rootsave.update()
+	filesave = filedialog.askopenfilename()
+	rootsave.destroy()
+	print(filesave)
+	
+	classification = np.loadtxt(filesave)
+	classification = [int(classification[i]) for i in range(len(classification))]
+	count = len(classification)
+	print(classification)
+	print("Windows already analized: ", count)
+	
+	
+	
+	if config_analysis['Overlap'] == True:
+		fig, ax = plt.subplots(nrows=1, ncols=2)
+		fig.set_size_inches(14.5, 4.5)
+		ax[0].axvline(x=t[count*window_advance]+window_time*0.25, color='red')
+		ax[0].axvline(x=t[count*window_advance]+window_time*0.75, color='red')
+		ax[0].plot(t[count*window_advance:window_points+window_advance*count], x1[count*window_advance:window_points+window_advance*count])
+		
+		ax[1].axvline(x=t[count*window_advance]+window_time*0.25, color='red')
+		ax[1].axvline(x=t[count*window_advance]+window_time*0.75, color='red')
+		ax[1].plot(t, x1)
+		ax[1].set_xlim(left=t[count*window_advance]-window_time*7, right=t[count*window_advance]+window_time*7)
+			
+	else:
+		fig, ax = plt.subplots(nrows=1, ncols=2)
+		fig.set_size_inches(14.5, 4.5)
+		ax[0].plot(t[count*window_points:(count+1)*window_points], x1[count*window_points:(count+1)*window_points])
+		ax[0].axvline(x=t[count*window_points], color='magenta')
+		ax[0].axvline(x=t[count*window_points]+window_time, color='magenta')
+		
+		ax[1].axvline(x=t[count*window_points], color='magenta')
+		ax[1].axvline(x=t[count*window_points]+window_time, color='magenta')
+		ax[1].plot(t, x1)
+		ax[1].set_xlim(left=t[count*window_points]-window_time*7, right=t[count*window_points]+window_time*7)
+	plt.title('Window N ' + str(count))
+	plt.show(block=False)
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-#TEST
-# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
-# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
-# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
+# #TEST
+# # mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
+# # filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+# # filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
 
-#TRAIN
-mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/train'
-# filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
-filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160506_142422.mat')
+# #TRAIN
+# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/train'
+# # filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
+# filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160506_142422.mat')
 
-config_analysis = {'WindowTime':0.002, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
+from tkinter import filedialog
+
+
+rootfile = Tk()
+rootfile.withdraw()
+rootfile.update()
+filename1 = filedialog.askopenfilename()
+rootfile.destroy()
+print(filename1)
+
+
+
+
+
+
+
+
+
+
+
+
+config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
 'channel':args.channel}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
@@ -305,7 +398,6 @@ if (config_demod['analysis'] == True or config_filter['analysis'] == True):
 		warm = float(warm)
 
 
-classification = []
 window_time = config_analysis['WindowTime']
 window_points = int(window_time*fs)
 window_advance = int(window_points*config_analysis['WindowAdvance'])
@@ -325,7 +417,7 @@ root.title('canv')
 root.config(bg="white")
 w,h=root.maxsize()
 print("%dx%d"%(w,h))
-root.geometry("%dx%d"%(750,150))
+root.geometry("%dx%d"%(1150,150))
 
 # Button Positive
 botonn=Button(root,text="Positive",font=('arial', 22, 'bold'),command=Positive)
@@ -339,23 +431,42 @@ botonn['bg']='dark blue'
 botonn['fg']='orange'
 botonn.place(x=180,y=40)
 
+# Button Maybe
+botonn=Button(root,text="Maybe",font=('arial', 22, 'bold'),command=Maybe)
+botonn['bg']='orange'
+botonn['fg']='black'
+botonn.place(x=350,y=40)
+
 # Button Discard
 botonn=Button(root,text="Discard",font=('arial', 22, 'bold'),command=Discard)
 botonn['bg']='red'
 botonn['fg']='black'
-botonn.place(x=350,y=40)
+botonn.place(x=490,y=40)
 
 # Button Start
 botonn=Button(root,text="Start",font=('arial', 22, 'bold'),command=Start)
 botonn['bg']='white'
 botonn['fg']='black'
-botonn.place(x=510,y=40)
+botonn.place(x=660,y=40)
 
 # Button Quit
 botonn=Button(root,text="Quit",font=('arial', 22, 'bold'),command=Quit)
 botonn['bg']='black'
 botonn['fg']='white'
-botonn.place(x=630,y=40)
+botonn.place(x=760,y=40)
+
+# Button Save
+botonn=Button(root,text="Save",font=('arial', 22, 'bold'),command=Save)
+botonn['bg']='blue'
+botonn['fg']='magenta'
+botonn.place(x=860,y=40)
+
+
+# Button StartOld
+botonn=Button(root,text="StartOld",font=('arial', 22, 'bold'),command=StartOld)
+botonn['bg']='magenta'
+botonn['fg']='black'
+botonn.place(x=960,y=40)
 
 root.mainloop()
 
