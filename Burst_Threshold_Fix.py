@@ -29,6 +29,14 @@ from os.path import isfile, join
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
+def max_cspectrum(ciclicspectrum):
+	max = 0.0
+	for i in range(len(ciclicspectrum)):
+		pmax = np.max(ciclicspectrum[i])
+		if pmax > max:
+			max = pmax
+	return max
+
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 import argparse
 
@@ -62,21 +70,31 @@ if args.showplot != None:
 
 	
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
-#OK
-mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/OK'
+# #OK
+# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/OK'
 # file_ok_train_1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160506_142422.mat')
-file_ok_train_1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
+# file_ok_train_2 = join(mypath, 'V2_9_n1500_M80_AE_Signal_20160506_145215.mat')
 
-file_ok_train_2 = join(mypath, 'V2_9_n1500_M80_AE_Signal_20160506_145215.mat')
-# file_ok_test = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
+# #Fault
+# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/Fault'
+# file_fault_train_1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
+# file_fault_train_2 = join(mypath, 'V2_9_n1500_M80_AE_Signal_20160928_151441.mat')
+
+
+
+#OK
+mypath = 'C:/Felix\Data/CNs_Getriebe/Paper_Bursts/Other_OC/OK'
+file_ok_train_1 = join(mypath, 'V1_6_n1500_M40_AE_Signal_20160506_140849.mat')
+# file_ok_train_2 = join(mypath, 'V1_7_n0500_M80_AE_Signal_20160506_141407.mat')
+file_ok_train_2 = join(mypath, 'V1_8_n1000_M80_AE_Signal_20160506_141822.mat')
+
 
 #Fault
-mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/Fault'
-# file_fault_train_1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
-file_fault_train_1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+mypath = 'C:/Felix\Data/CNs_Getriebe/Paper_Bursts/Other_OC/Fault'
+file_fault_train_1 = join(mypath, 'V1_6_n1500_M40_AE_Signal_20160928_143502.mat')
+# file_fault_train_2 = join(mypath, 'V1_7_n500_M80_AE_Signal_20160928_143840.mat')
+file_fault_train_2 = join(mypath, 'V1_8_n1000_M80_AE_Signal_20160928_144217.mat')
 
-file_fault_train_2 = join(mypath, 'V2_9_n1500_M80_AE_Signal_20160928_151441.mat')
-# file_fault_test = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
 
 
 x_ok_train_1 = f_open_mat(file_ok_train_1, channel)
@@ -151,11 +169,13 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
 
 
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
+config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
 'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3], 'offwarming':True}
 #When hilbert is selected, the other parameters are ignored
+#When mixed is selected, filter is ignored
 
-config_diff = {'analysis':False, 'length':1, 'same':True}
+
+config_diff = {'analysis':True, 'length':1, 'same':True}
 
 
 config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'colormesh', 'color':'gray'}
@@ -163,7 +183,8 @@ config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-sca
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
-config_CyclicSpectrum = {'segments':100, 'freq_range':[10.0e3, 450.0e3], 'window':'hanning', 'mode':'magnitude', 'log':True}
+config_CyclicSpectrum = {'segments':100, 'freq_range':[10.0e3, 450.0e3], 'window':'hanning', 'mode':'magnitude', 'log':False, 'off_PSD':True,
+'kHz':True}
 
 # config_analysis['CyclicSpectrum'] == True:
 	# segments = config_CyclicSpectrum['segments']
@@ -229,7 +250,7 @@ t_window = 0.001
 		# x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
 
 
-		
+	
 #Demodulation
 if config_demod['analysis'] == True:
 	print('+++Demodulation:')
@@ -252,8 +273,24 @@ if config_demod['analysis'] == True:
 		
 		x_fault_train_2 = butter_demodulation(x=x_fault_train_2, fs=fs, filter=config_demod['filter'], prefilter=config_demod['prefilter'], 
 		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
+	
+	elif config_demod['mode'] == 'mixed':
+		x_ok_train_1 = mixed_demodulation(x=x_ok_train_1, fs=fs, prefilter=config_demod['prefilter'], 
+		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
+		
+		x_ok_train_2 = mixed_demodulation(x=x_ok_train_2, fs=fs, prefilter=config_demod['prefilter'], 
+		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
+		
+		x_fault_train_1 = mixed_demodulation(x=x_fault_train_1, fs=fs, prefilter=config_demod['prefilter'], 
+		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
+		
+		x_fault_train_2 = mixed_demodulation(x=x_fault_train_2, fs=fs, prefilter=config_demod['prefilter'], 
+		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
+	
+	
 	else:
 		print('Error assignment demodulation')
+
 
 
 #Differentiation
@@ -274,10 +311,9 @@ if config_diff['analysis'] == True:
 		x_fault_train_2 = diff_signal(x=x_fault_train_2, length_diff=config_diff['length'])
 	else:
 		print('Error assignment diff')	
-
 warm = 0.0
 if (config_demod['analysis'] == True and config_demod['offwarming'] == True and config_demod['mode'] == 'butter'):
-	warm = 2000
+	warm = 10000
 	x_ok_train_1 = x_ok_train_1[warm:]
 	x_ok_train_2 = x_ok_train_2[warm:]
 	x_fault_train_1 = x_fault_train_1[warm:]
@@ -286,15 +322,20 @@ if (config_demod['analysis'] == True and config_demod['offwarming'] == True and 
 	t = t[warm:]
 	warm = float(warm)
 
-# threshold_ok_train_1 = fak*signal_rms(x_ok_train_1)
-# threshold_ok_train_2 = fak*signal_rms(x_ok_train_2)
-# threshold_fault_train_1 = fak*signal_rms(x_fault_train_1)
-# threshold_fault_train_2 = fak*signal_rms(x_fault_train_2)
+threshold_ok_train_1 = fak*signal_rms(x_ok_train_1)
+threshold_ok_train_2 = fak*signal_rms(x_ok_train_2)
+threshold_fault_train_1 = fak*signal_rms(x_fault_train_1)
+threshold_fault_train_2 = fak*signal_rms(x_fault_train_2)
 
-threshold_ok_train_1 = 0.35
-threshold_ok_train_2 = 0.35
-threshold_fault_train_1 = 0.35
-threshold_fault_train_2 = 0.35
+# threshold_ok_train_1 = 0.35
+# threshold_ok_train_2 = 0.35
+# threshold_fault_train_1 = 0.35
+# threshold_fault_train_2 = 0.35
+
+threshold_ok_train_1 = 0.00065
+threshold_ok_train_2 = 0.00065
+threshold_fault_train_1 = 0.00065
+threshold_fault_train_2 = 0.00065
 
 
 # print('RMS Values: ')
@@ -356,17 +397,39 @@ threshold_fault_train_2 = 0.35
 		# stPSDX2 = np.log(stPSDX2)
 
 #++++++++++++++++++++++ CYCLIC SPECTRUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if config_analysis['CyclicSpectrum'] == True:
-	# segments = config_CyclicSpectrum['segments']
-	# window = config_CyclicSpectrum['window']
-	# mode = config_CyclicSpectrum['mode']
-	# freq_range = config_CyclicSpectrum['freq_range']
+if config_analysis['CyclicSpectrum'] == True:
+	segments = config_CyclicSpectrum['segments']
+	window = config_CyclicSpectrum['window']
+	mode = config_CyclicSpectrum['mode']
+	freq_range = config_CyclicSpectrum['freq_range']
 	
-	# CyclicSpectrum1, a_CyclicSpectrum1, f_CyclicSpectrum1 = Cyclic_Spectrum(x=x1, fs=fs, segments=segments, freq_range=freq_range)
-	# CyclicSpectrum2, a_CyclicSpectrum2, f_CyclicSpectrum2 = Cyclic_Spectrum(x=x2, fs=fs, segments=segments, freq_range=freq_range)	
-	# if config_CyclicSpectrum['log'] == True:
-		# CyclicSpectrum1 = np.log(CyclicSpectrum1)
-		# CyclicSpectrum2 = np.log(CyclicSpectrum2)
+	CyclicSpectrum1, a_CyclicSpectrum1, f_CyclicSpectrum1 = Cyclic_Spectrum(x=x_ok_train_1, fs=fs, segments=segments, freq_range=freq_range)
+	CyclicSpectrum2, a_CyclicSpectrum2, f_CyclicSpectrum2 = Cyclic_Spectrum(x=x_ok_train_2, fs=fs, segments=segments, freq_range=freq_range)
+	CyclicSpectrum3, a_CyclicSpectrum3, f_CyclicSpectrum3 = Cyclic_Spectrum(x=x_fault_train_1, fs=fs, segments=segments, freq_range=freq_range)
+	CyclicSpectrum4, a_CyclicSpectrum4, f_CyclicSpectrum4 = Cyclic_Spectrum(x=x_fault_train_1, fs=fs, segments=segments, freq_range=freq_range)
+	if config_CyclicSpectrum['off_PSD'] == True:
+		for i in range(len(CyclicSpectrum1)):
+			# CyclicSpectrum1[i] = CyclicSpectrum1[i][1:]
+			CyclicSpectrum1[i][0] = 0.
+
+			
+		for i in range(len(CyclicSpectrum2)):
+			# CyclicSpectrum2[i] = CyclicSpectrum2[i][1:]
+			CyclicSpectrum2[i][0] = 0.
+			
+		for i in range(len(CyclicSpectrum3)):
+			# CyclicSpectrum3[i] = CyclicSpectrum3[i][1:]
+			CyclicSpectrum3[i][0] = 0.
+			
+		for i in range(len(CyclicSpectrum4)):
+			# CyclicSpectrum3[i] = CyclicSpectrum3[i][1:]
+			CyclicSpectrum4[i][0] = 0.
+	
+	if config_CyclicSpectrum['log'] == True:
+		CyclicSpectrum1 = np.log(CyclicSpectrum1)
+		CyclicSpectrum2 = np.log(CyclicSpectrum2)
+		CyclicSpectrum3 = np.log(CyclicSpectrum3)
+		CyclicSpectrum4 = np.log(CyclicSpectrum4)
 
 #++++++++++++++++++++++ CEPSTRUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -433,6 +496,8 @@ for element in config_analysis:
 			t_burst_fault_train_1 = t_burst_fault_train_1 + np.ones(len(t_burst_fault_train_1))*warm*dt
 			t_burst_fault_train_2 = t_burst_fault_train_2 + np.ones(len(t_burst_fault_train_2))*warm*dt
 			
+			print(t_burst_fault_train_2)
+			print(len(x_fault_train_2))
 			
 			
 			ax[0][0].axhline(threshold_ok_train_1, color='k')
@@ -609,25 +674,76 @@ for element in config_analysis:
 			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
 				ax[1].set_ylim((0, config_demod['filter'][1]))
 			
-		elif element == 'CyclicSpectrum':			
-			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-			map = ax[0].pcolormesh(a_CyclicSpectrum1, f_CyclicSpectrum1, CyclicSpectrum1)
-			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
-			ax[0].set_ylabel('Frequency Hz')
-			fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
-			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
-				ax[0].set_ylim((0, config_demod['filter'][1]))
-
-			map = ax[1].pcolormesh(a_CyclicSpectrum2, f_CyclicSpectrum2, CyclicSpectrum2)
-			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
-			ax[1].set_ylabel('öFrequency Hz')
-			ax[1].set_xlabel('Cyclic Frequency Hz')
-			fig[count].colorbar(map, ax=ax[1], extendrect=True, extend='both', extendfrac=0)
-			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
-				ax[1].set_ylim((0, config_demod['filter'][1]))
-		
-		
+		elif element == 'CyclicSpectrum':
+			map = []
+			vmax = np.max([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2), max_cspectrum(CyclicSpectrum3), max_cspectrum(CyclicSpectrum4)])
+			fig[count], ax = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+			# map = ax[0][0].pcolormesh(a_CyclicSpectrum1, f_CyclicSpectrum1, CyclicSpectrum1)
+			if config_CyclicSpectrum['kHz'] == True:
+				fact = 1000.
+				yscalename = 'Frequency kHz'
+			else:
+				fact = 1
+				yscalename = 'Frequency Hz'
 			
+			map.append(ax[0][0].pcolormesh(a_CyclicSpectrum1, f_CyclicSpectrum1/fact, CyclicSpectrum1, cmap='Purples', vmax=vmax))
+
+			# ax[0][0].set_title(channel + ' ' + element + '\n' + file_ok_train_1)
+			ax[0][0].set_title(file_ok_train_1)
+
+			ax[0][0].set_ylabel(yscalename)
+			ax[0][0].set_xlabel('Cyclic Frequency Hz')
+			# fig[count].colorbar(map, ax=ax[0][0], extendrect=True, extend='both', extendfrac=0)
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[0][0].set_ylim((0, config_demod['filter'][1]))
+			for tik in ax[0][0].get_xticklabels():
+				tik.set_visible(True)
+
+			
+			# map = ax[0][1].pcolormesh(a_CyclicSpectrum2, f_CyclicSpectrum2, CyclicSpectrum2)
+			map.append(ax[0][1].pcolormesh(a_CyclicSpectrum2, f_CyclicSpectrum2/fact, CyclicSpectrum2, cmap='Purples', vmax=vmax))
+			# ax[0][1].set_title(channel + ' ' + element + '\n' + file_ok_train_2)
+			ax[0][1].set_title(file_ok_train_2)
+			ax[0][1].set_ylabel(yscalename)
+			ax[0][1].set_xlabel('Cyclic Frequency Hz')
+			# fig[count].colorbar(map, ax=ax[0][1], extendrect=True, extend='both', extendfrac=0)
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[0][1].set_ylim((0, config_demod['filter'][1]))
+			for tik in ax[0][1].get_yticklabels():
+				tik.set_visible(True)
+			for tik in ax[0][1].get_xticklabels():
+				tik.set_visible(True)
+		
+			# map = ax[1][0].pcolormesh(a_CyclicSpectrum3, f_CyclicSpectrum3, CyclicSpectrum3)
+			map.append(ax[1][0].pcolormesh(a_CyclicSpectrum3, f_CyclicSpectrum3/fact, CyclicSpectrum3, cmap='Purples', vmax=vmax))
+			# ax[1][0].set_title(channel + ' ' + element + '\n' + file_fault_train_1)
+			ax[1][0].set_title(file_fault_train_1)
+			ax[1][0].set_ylabel(yscalename)
+			ax[1][0].set_xlabel('Cyclic Frequency Hz')
+			# fig[count].colorbar(map, ax=ax[1][0], extendrect=True, extend='both', extendfrac=0)
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[1][0].set_ylim((0, config_demod['filter'][1]))
+				
+			# map = ax[1][1].pcolormesh(a_CyclicSpectrum4, f_CyclicSpectrum4, CyclicSpectrum4)
+			map.append(ax[1][1].pcolormesh(a_CyclicSpectrum4, f_CyclicSpectrum4/fact, CyclicSpectrum4, cmap='Purples', vmax=vmax))
+			# ax[1][1].set_title(channel + ' ' + element + '\n' + file_fault_train_2)
+			ax[1][1].set_title(file_fault_train_2)
+			ax[1][1].set_ylabel(yscalename)
+			ax[1][1].set_xlabel('Cyclic Frequency Hz')
+			# fig[count].colorbar(map, ax=ax[1][1], extendrect=True, extend='both', extendfrac=0)
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[1][1].set_ylim((0, config_demod['filter'][1]))
+			for tik in ax[1][1].get_yticklabels():
+				tik.set_visible(True)
+			
+			
+			indmax = np.argmax([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2), max_cspectrum(CyclicSpectrum3), max_cspectrum(CyclicSpectrum4)])
+			# fig[count].colorbar(map)
+			# max = np.max(np.append)
+			fig[count].colorbar(map[indmax], ax=ax.ravel().tolist())
+			# plt.colorbar()
+			
+		
 		elif element == 'Cepstrum':		
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
 			ax[0].plot(tc, cepstrumX1)
@@ -679,11 +795,11 @@ fig[count], ax = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
 
 
 
-amp_burst_ok_train_1 = np.array([x_ok_train_1[int(time*fs)] for time in t_burst_ok_train_1])
-amp_burst_ok_train_2 = np.array([x_ok_train_2[int(time*fs)] for time in t_burst_ok_train_2])
+amp_burst_ok_train_1 = np.array([x_ok_train_1raw[int(time*fs)] for time in t_burst_ok_train_1])
+amp_burst_ok_train_2 = np.array([x_ok_train_2raw[int(time*fs)] for time in t_burst_ok_train_2])
 
-amp_burst_fault_train_1 = np.array([x_fault_train_1[int(time*fs)] for time in t_burst_fault_train_1])
-amp_burst_fault_train_2 = np.array([x_fault_train_2[int(time*fs)] for time in t_burst_fault_train_2])
+amp_burst_fault_train_1 = np.array([x_fault_train_1raw[int(time*fs)] for time in t_burst_fault_train_1])
+amp_burst_fault_train_2 = np.array([x_fault_train_2raw[int(time*fs)] for time in t_burst_fault_train_2])
 
 
 ax[0][0].plot(traw, x_ok_train_1raw)
