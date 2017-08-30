@@ -1,5 +1,5 @@
-# Burst_Threshold_Fix.py
-# Last updated: 28.08.2017 by Felix Leaman
+# Burst_Master.py
+# Last updated: 30.08.2017 by Felix Leaman
 # Description:
 # Code for opening 2 x a .mat or .tdms data files with single channel and plotting different types of analysis
 # The file and channel is selected by the user

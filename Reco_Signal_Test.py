@@ -1,5 +1,5 @@
 # Reco_Signal_Test.py
-# Last updated: 24.08.2017 by Felix Leaman
+# Last updated: 30.08.2017 by Felix Leaman
 # Description:
 # 
 
@@ -30,7 +30,8 @@ import argparse
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 from sklearn.neural_network import MLPClassifier
 
-
+from tkinter import filedialog
+from tkinter import Tk
 
 #+++++++++++++++++++++++++++PARSER++++++++++++++++++++++++++++++++++++++++++
 parser = argparse.ArgumentParser()
@@ -70,11 +71,56 @@ def read_pickle(pickle_name):
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
-filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
+
+root = Tk()
+root.withdraw()
+root.update()
+
+
+path_info_model = filedialog.askopenfilename()
+info_model = read_pickle(path_info_model)
+print('Info Model: ')
+print(info_model)
+bool = input('Continue? Y/N: ')
+if bool == 'N':
+	sys.exit()
+clf = info_model[1]
+config_model = info_model[0]
+
+filepath = filedialog.askopenfilename()
+
+x = f_open_mat(filepath, channel)
+x = np.ndarray.flatten(x)
+
+
+# info_classification = read_pickle(pickle_name_classification)
+
+# if info_classification['filename'] != filename1:
+	# print('Wrong filename!!!')
+	# sys.exit()
+# classification = info_classification['classification']
+
+
+
+#Filenames
+filename = os.path.basename(filepath)
+
+# if info_classification_pickle['filename'] != filename:
+	# print('Wrong filename!!!')
+	# sys.exit()
+
+
+root.destroy()
+
+
+
+
+
+# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
+# filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
 # filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160506_152625.mat')
 
-config_analysis = {'WindowTime':0.002, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
+config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
 'channel':args.channel}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
@@ -89,24 +135,24 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-pickle_name_model = 'clf_20170825_132430_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
-pickle_name_classification = 'classification_20170825_130754_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl'
+# pickle_name_model = 'clf_20170825_132430_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
+# pickle_name_classification = 'classification_20170825_130754_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl'
 # pickle_name_classification = 'classification_20170825_131643_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl'
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
-point_index = filename1.find('.')
-extension = filename1[point_index+1] + filename1[point_index+2] + filename1[point_index+3]
+# point_index = filename1.find('.')
+# extension = filename1[point_index+1] + filename1[point_index+2] + filename1[point_index+3]
 
-if extension == 'mat':
-	x1 = f_open_mat(filename1, channel)
-	x1 = np.ndarray.flatten(x1)
-
-
-elif extension == 'tdm': #tdms
-	x1 = f_open_tdms(filename1, channel)
+# if extension == 'mat':
+	# x1 = f_open_mat(filename1, channel)
+	# x1 = np.ndarray.flatten(x1)
 
 
-filename1 = os.path.basename(filename1) #changes from path to file
+# elif extension == 'tdm': #tdms
+	# x1 = f_open_tdms(filename1, channel)
+
+
+# filename1 = os.path.basename(filename1) #changes from path to file
 #++++++++++++++++++++++ SAMPLING +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if channel == 'Koerperschall':
 	fs = 1000.0
@@ -119,15 +165,22 @@ else:
 
 if args.power2 == None:
 	n_points = 2**(max_2power(len(x1)))
-x1 = x1[0:n_points]
-x1raw = x1
+x = x[0:n_points]
+# x1raw = x1
 
 
 dt = 1.0/fs
-n_points = len(x1)
+n_points = len(x)
 tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
-traw = t
+# traw = t
+
+xraw = x
+
+if config_model['normalization'] == 'per_signal':
+	x = x / np.max(np.absolute(x))
+	print('normalization per signal')
+
 
 
 #++++++++++++++++++++++SIGNAL PROCESSING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -195,14 +248,14 @@ if (config_demod['analysis'] == True or config_filter['analysis'] == True):
 
 
 #++++++++++++++++++++++ TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-info_model = read_pickle(pickle_name_model)
-clf = info_model[1]
-info_classification = read_pickle(pickle_name_classification)
+# info_model = read_pickle(pickle_name_model)
+# clf = info_model[1]
+# info_classification = read_pickle(pickle_name_classification)
 
-if info_classification['filename'] != filename1:
-	print('Wrong filename!!!')
-	sys.exit()
-classification = info_classification['classification']
+# if info_classification['filename'] != filename1:
+	# print('Wrong filename!!!')
+	# sys.exit()
+# classification = info_classification['classification']
 
 
 windows = []
@@ -214,64 +267,88 @@ if config_analysis['Overlap'] == True:
 else:
 	n_windows = int(n_points/window_points)
 print('Number of windows: ', n_windows)
-if info_classification['n_windows'] != n_windows:
-	print('Wrong n_windows!!!')
-	sys.exit()
+# if info_classification['n_windows'] != n_windows:
+	# print('Wrong n_windows!!!')
+	# sys.exit()
 
 
 
 for count in range(n_windows):
 	if config_analysis['Overlap'] == True:
-		windows.append(x1[count*window_advance:window_points+window_advance*count])
+		windows.append(x[count*window_advance:window_points+window_advance*count])
 	else:
-		windows.append(x1[count*window_points:(count+1)*window_points])
+		windows.append(x[count*window_points:(count+1)*window_points])
 
-
-
-
-
-fp = 0
-fn = 0
-tp = 0
-tn = 0
-for window, label in zip(windows, classification):
+predictions = []
+for window in windows:
+	if config_model['normalization'] == 'per_window':
+		print('normalization per window')
+		window = window / np.max(np.absolute(window))
 	prediction = clf.predict(window)
-	print('+++++++++++')
-	print('Prediction: ', prediction[0])
-	print('Reality: ', label)
-	print(type(prediction[0]))
-	print(type(label))
-	if prediction[0] == int(label):
-		print('!!!!!!!!!!!!!!!!!!!!!!!')
-		if int(label) == 1:
-			tp = tp + 1
-		elif int(label) == 0:
-			tn = tn + 1
-		else:
-			print('Problem with labels')
-			sys.exit()
-	else:
-		print('......................')
-		if int(label) == 1:
-			fn = fn + 1
-		elif int(label) == 0:
-			fp = fp + 1
-		else:
-			print('Problem with labels')
-			sys.exit()
-print('False Negatives: ', fn)
-print('False Positives: ', fp)
-print('True Negatives: ', tn)
-print('True Positives: ', tp)
-print('Total: ', len(classification))
-recall = 
-precision = 
-accuracy =
+	# print(prediction)
+	# print(type(prediction))
+	# print(type(prediction[0]))
+	predictions.append(prediction[0])
+t_burst = []
+amp_burst = []
+for i in range(len(predictions)):
+	if predictions[i] == 1:
+		t_burst.append(i*window_time)
+		amp_burst.append(xraw[int(i*window_time*fs)])
 
-info_results = ['FN', fn, 'FP', fp, 'TN', tn, 'TP', tp, 'Total', len(classification),
-'Recall', 'Precision', 'Accuracy']
 
-sys.exit()
+fig, ax = plt.subplots(nrows=1, ncols=1)
+
+ax.plot(t, xraw)
+ax.plot(t_burst, amp_burst, 'ro')
+# ax[0][0].set_title(channel + ' ' + 'Raw WFM' + '\n' + file_ok_train_1, fontsize=10)
+ax.set_title(filename, fontsize=10)
+
+ax.set_ylabel('Amplitude')
+ax.set_xlabel('Time s')
+plt.show()
 
 
 
+# fp = 0
+# fn = 0
+# tp = 0
+# tn = 0
+# for window, label in zip(windows, classification):
+	# prediction = clf.predict(window)
+	# print('+++++++++++')
+	# print('Prediction: ', prediction[0])
+	# print('Reality: ', label)
+	# print(type(prediction[0]))
+	# print(type(label))
+	# if prediction[0] == int(label):
+		# print('!!!!!!!!!!!!!!!!!!!!!!!')
+		# if int(label) == 1:
+			# tp = tp + 1
+		# elif int(label) == 0:
+			# tn = tn + 1
+		# else:
+			# print('Problem with labels')
+			# sys.exit()
+	# else:
+		# print('......................')
+		# if int(label) == 1:
+			# fn = fn + 1
+		# elif int(label) == 0:
+			# fp = fp + 1
+		# else:
+			# print('Problem with labels')
+			# sys.exit()
+# print('False Negatives: ', fn)
+# print('False Positives: ', fp)
+# print('True Negatives: ', tn)
+# print('True Positives: ', tp)
+# print('Total: ', len(classification))
+# recall = 
+# precision = 
+# accuracy =
+
+# info_results = ['FN', fn, 'FP', fp, 'TN', tn, 'TP', tp, 'Total', len(classification),
+# 'Recall', 'Precision', 'Accuracy']
+
+# sys.exit()

@@ -73,13 +73,13 @@ def read_pickle(pickle_name):
 # mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/'
 # filename1 = join(mypath, 'V3_9_n1500_M80_AE_Signal_20160928_154159.mat')
 
-mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/train'
+mypath = 'C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault'
 filename1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
 
-pickle_classification = 'classification_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
+pickle_classification = 'classification_20170830_141254_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
 
 
-config_analysis = {'WindowTime':0.003, 'Overlap':True, 'WindowAdvance':0.4, 'savepik':True}
+config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
@@ -197,6 +197,11 @@ if info_classification['filename'] != filename1:
 	print('Wrong filename!!!')
 	sys.exit()
 classification = info_classification['classification']
+print(len(classification))
+print(len([item for item in classification if item==1]))
+print(len([item for item in classification if item==2]))
+print(len([item for item in classification if item==0]))
+
 
 
 windows = []

@@ -58,6 +58,17 @@ if args.showplot != None:
 
 
 #+++++++++++++++++++++++++++FUNCTIONS++++++++++++++++++++++++++++++++++++++++++
+def read_pickle(pickle_name):
+	pik = open(pickle_name, 'rb')
+	pickle_data = pickle.load(pik)
+	return pickle_data
+
+def find_extention(filename):
+	point_index = filename.find('.')
+	extention = filename[point_index+1] + filename[point_index+2] + filename[point_index+3]
+	return extention
+
+
 def save_pickle(pickle_name, pickle_data):
 	pik = open(pickle_name, 'wb')
 	pickle.dump(pickle_data, pik)
@@ -211,8 +222,16 @@ def StartOld():
 	filesave = filedialog.askopenfilename()
 	rootsave.destroy()
 	print(filesave)
+	extention = find_extention(filesave)
+	if extention == 'txt':
+		classification = np.loadtxt(filesave)
+	elif extention == 'pkl':
+		dog = read_pickle(filesave)
+		classification = dog['classification']
+	else:
+		print('wrong extention')
 	
-	classification = np.loadtxt(filesave)
+		
 	classification = [int(classification[i]) for i in range(len(classification))]
 	count = len(classification)
 	print(classification)
