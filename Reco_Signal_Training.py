@@ -18,7 +18,7 @@ from tkinter import Tk
 import os.path
 import sys
 sys.path.insert(0, './lib') #to open user-defined functions
-
+from scipy import stats
 from m_open_extension import *
 from m_fft import *
 from m_demodulation import *
@@ -87,12 +87,12 @@ root = Tk()
 root.withdraw()
 root.update()
 
-filepaths = []
-filenames = []
+Filepaths = []
+Filenames = []
 # classification_pickles = []
-signals = []
-classifications_per_file = []
-windows_per_file = []
+Signals = []
+Classifications_per_file = []
+Windows_per_file = []
 
 # info_classification = read_pickle(pickle_classification)
 # if info_classification['filename'] != filename1:
@@ -100,34 +100,73 @@ windows_per_file = []
 	# sys.exit()
 # classification = info_classification['classification']
 
-
+Flags_start_in = []
 for i in range(n_files):
+	print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
 	print('Select file, then pickle classification!!! ')
 	#Paths
-	single_filepath = filedialog.askopenfilename()
-	filepaths.append(single_filepath)
+	filepath = filedialog.askopenfilename()
+	Filepaths.append(filepath)
 	
 	#Classifications
-	single_classification_pickle = filedialog.askopenfilename()
-	info_classification_pickle = read_pickle(single_classification_pickle)	
-	classifications_per_file.append(info_classification_pickle['classification'])
+	classification_pickle = filedialog.askopenfilename()
+	info_classification_pickle = read_pickle(classification_pickle)
+	classification_in_file = info_classification_pickle['classification']
+	Classifications_per_file.append(classification_in_file)
+	checked_windows_in_file = len(classification_in_file)
+	# print(classification_in_file)
+	print('Windows checked in file: ', checked_windows_in_file)
+
 	
-	#N_Windows
+	#N_Windows	
 	windows_in_file = info_classification_pickle['n_windows']
 	window_duration = info_classification_pickle['config_analysis']['WindowTime']
 	points_in_file = int(windows_in_file*window_duration*fs)
 	print('Power2 in file: ', np.log2(points_in_file))
-	windows_per_file.append(windows_in_file)
+	print('Total Windows total in file: ', windows_in_file)
+	
+	checked_points_in_file = int(checked_windows_in_file*window_duration*fs)
 	
 	#Signals
-	x = f_open_mat(single_filepath, channel)
-	x = np.ndarray.flatten(x)
-	x = x[0:points_in_file]
-	signals.append(x)
+	x = f_open_mat(filepath, channel)
+	# print(x)
+	# x = np.ndarray.flatten(x)
+	x = np.ravel(x)
+	# print(x)
+	x = x[0:checked_points_in_file]
+	
+	
+	
+	if info_classification_pickle['config_analysis']['start_in'] != 0:
+		start_in_time = info_classification_pickle['config_analysis']['start_in']
+		print(start_in_time)
+		print(type(start_in_time))
+		print('with start in!!!!+++++++++++')
+		# Flags_start_in.append(True)
+		print(int(start_in_time*fs))
+		print(len(x))
+		print(type(x))
+		print(x.shape)
+		x = x[int(start_in_time*fs):]
+		print(len(x))
+		print(type(x))
+		print(x.shape)
+		Windows_per_file.append(checked_windows_in_file-1)
+		# print(int(start_in_time*fs))
+	else:
+		print('Classification pickel not having start in')
+		Windows_per_file.append(checked_windows_in_file)
+		print(len(x))
+		print(type(x))
+		print(x.shape)
+	
+	
+	# sys.exit()
+	Signals.append(x)
 	
 	#Filenames
-	filename = os.path.basename(single_filepath)
-	filenames.append(filename)
+	filename = os.path.basename(filepath)
+	Filenames.append(filename)
 	
 	if info_classification_pickle['filename'] != filename:
 		print('Wrong filename!!!')
@@ -136,11 +175,15 @@ for i in range(n_files):
 	
 	
 	
-	
+# fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+# ax[0].plot(Signals[0])
+# ax[1].plot(Signals[1])
+# plt.show()
+# sys.exit()
 
 root.destroy()
 
-
+# print(windows_per_file)
 # x = f_open_mat(filename, channel)
 # x = np.ndarray.flatten(x)
 
@@ -170,9 +213,9 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-config_NNmodel = {'normalization': 'per_window', 
-'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(500, 50),
-'random_state':1, 'activation':'tanh', 'tol':1.e-8, 'max_iter':1000, 'files':filenames, 'windows_per_file':windows_per_file}
+config_NNmodel = {'normalization': 'per_signal', 
+'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(100, 10),
+'random_state':1, 'activation':'tanh', 'tol':1.e-7, 'max_iter':5000, 'files':Filenames, 'windows_per_file':Windows_per_file}
 
 
 
@@ -206,64 +249,64 @@ config_NNmodel = {'normalization': 'per_window',
 
 
 #++++++++++++++++++++++SIGNAL PROCESSING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#Filter
-if config_filter['analysis'] == True:
-	print('+++Filter:')
-	if config_filter['type'] == 'bandpass':
-		print('Bandpass')
-		f_nyq = 0.5*fs
-		order = config_filter['params'][1]
-		freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
-		b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
-		x1 = signal.filtfilt(b, a, x1)
-	elif config_filter['type'] == 'median':
-		print('Median')
-		x1 = scipy.signal.medfilt(x1)
-
-#Autocorrelation
-# if config_autocorr['analysis'] == True:
+# #Filter
+# if config_filter['analysis'] == True:
 	# print('+++Filter:')
-	# if config_autocorr['type'] == 'definition':
-		# x1 = np.correlate(x1, x1, mode=config_autocorr['mode'])
-		# x2 = np.correlate(x2, x2, mode=config_autocorr['mode'])
+	# if config_filter['type'] == 'bandpass':
+		# print('Bandpass')
+		# f_nyq = 0.5*fs
+		# order = config_filter['params'][1]
+		# freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
+		# b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
+		# x1 = signal.filtfilt(b, a, x1)
+	# elif config_filter['type'] == 'median':
+		# print('Median')
+		# x1 = scipy.signal.medfilt(x1)
+
+# #Autocorrelation
+# # if config_autocorr['analysis'] == True:
+	# # print('+++Filter:')
+	# # if config_autocorr['type'] == 'definition':
+		# # x1 = np.correlate(x1, x1, mode=config_autocorr['mode'])
+		# # x2 = np.correlate(x2, x2, mode=config_autocorr['mode'])
 	
-	# elif config_autocorr['type'] == 'wiener':	
-		# fftx1 = np.fft.fft(x1)
-		# x1 = np.real(np.fft.ifft(fftx1*np.conjugate(fftx1)))
+	# # elif config_autocorr['type'] == 'wiener':	
+		# # fftx1 = np.fft.fft(x1)
+		# # x1 = np.real(np.fft.ifft(fftx1*np.conjugate(fftx1)))
 		
-		# fftx2 = np.fft.fft(x2)
-		# x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
+		# # fftx2 = np.fft.fft(x2)
+		# # x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
 
 		
-#Demodulation
-if config_demod['analysis'] == True:
-	print('+++Demodulation:')
-	if config_demod['mode'] == 'hilbert':
-		x1 = hilbert_demodulation(x1)
-	elif config_demod['mode'] == 'butter':
-		x1 = butter_demodulation(x=x1, fs=fs, filter=config_demod['filter'], prefilter=config_demod['prefilter'], 
-		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
-	else:
-		print('Error assignment demodulation')
+# #Demodulation
+# if config_demod['analysis'] == True:
+	# print('+++Demodulation:')
+	# if config_demod['mode'] == 'hilbert':
+		# x1 = hilbert_demodulation(x1)
+	# elif config_demod['mode'] == 'butter':
+		# x1 = butter_demodulation(x=x1, fs=fs, filter=config_demod['filter'], prefilter=config_demod['prefilter'], 
+		# type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
+	# else:
+		# print('Error assignment demodulation')
 
 
-#Differentiation
-if config_diff['analysis'] == True:
-	print('+++Differentiation:')
-	if config_diff['same'] == True:
-		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
-	elif config_diff['same'] == False:
-		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
-	else:
-		print('Error assignment diff')	
+# #Differentiation
+# if config_diff['analysis'] == True:
+	# print('+++Differentiation:')
+	# if config_diff['same'] == True:
+		# x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
+	# elif config_diff['same'] == False:
+		# x1 = diff_signal(x=x1, length_diff=config_diff['length'])
+	# else:
+		# print('Error assignment diff')	
 
-if (config_demod['analysis'] == True or config_filter['analysis'] == True):
-	if (config_demod['warming'] == True and config_demod['mode'] == 'butter'):
-		print('Warm Warning')
-		warm = config_demod['warming_points']
-		x1 = x1[warm:]
-		t = t[warm:]
-		warm = float(warm)
+# if (config_demod['analysis'] == True or config_filter['analysis'] == True):
+	# if (config_demod['warming'] == True and config_demod['mode'] == 'butter'):
+		# print('Warm Warning')
+		# warm = config_demod['warming_points']
+		# x1 = x1[warm:]
+		# t = t[warm:]
+		# warm = float(warm)
 
 
 
@@ -283,7 +326,8 @@ window_time = config_analysis['WindowTime']
 window_points = int(window_time*fs)
 window_advance = int(window_points*config_analysis['WindowAdvance'])
 
-for x, classification, n_windows in zip(signals, classifications_per_file, windows_per_file):
+for x, classification, n_windows in zip(Signals, Classifications_per_file, Windows_per_file):
+	
 	# if config_analysis['Overlap'] == True:
 		# n_windows = int((n_points - window_points)/window_advance) + 1
 	# else:
@@ -291,9 +335,11 @@ for x, classification, n_windows in zip(signals, classifications_per_file, windo
 	# print('Number of windows: ', n_windows)
 	if config_NNmodel['normalization'] == 'per_signal':
 		x = x / np.max(np.absolute(x))
-		print('normalization per signal')
-		plt.plot(x)
-		plt.show()
+		x = x.tolist()
+		print('normalization per signal!!!!!!')
+		
+		# plt.plot(x)
+		# plt.show()
 
 	# if info_classification['n_windows'] != n_windows:
 		# print('Wrong n_windows!!!')
@@ -301,39 +347,121 @@ for x, classification, n_windows in zip(signals, classifications_per_file, windo
 
 	for count in range(n_windows):
 		if config_analysis['Overlap'] == True:
-			to_append = x[count*window_advance:window_points+window_advance*count]
+			current_window = x[count*window_advance:window_points+window_advance*count]
+			
+			pos_max = np.argmax(current_window)
+			left_window = current_window[0:pos_max]
+			right_window = current_window[pos_max:]
+			if (len(left_window) != 0 and len(right_window) != 0):
+				current_window = [np.max(current_window), 
+				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+			elif (len(left_window) == 0 and len(right_window) != 0):
+				current_window = [np.max(current_window), 
+				0., 0., 0., 0., 0., 
+				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+			elif (len(left_window) != 0 and len(right_window) == 0):
+				current_window = [np.max(current_window), 
+				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+				0., 0., 0., 0., 0.]
+			else:
+				print('error lens windows left and right+++++++++++++++++++++')
+			
 			if config_NNmodel['normalization'] == 'per_window':
-				to_append = to_append / np.max(np.absolute(to_append))
+				current_window = current_window / np.max(np.absolute(current_window))
 				print('normalization per window')
-			features.append(to_append)
+			features.append(current_window)
 		else:
-			to_append = x[count*window_points:(count+1)*window_points]
+			current_window = x[count*window_points:(count+1)*window_points]
+			pos_max = np.argmax(current_window)
+			left_window = current_window[0:pos_max]
+			right_window = current_window[pos_max:]
+			
+			
+			if (len(left_window) != 0 and len(right_window) != 0):
+				current_window = [np.max(current_window), 
+				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+			elif (len(left_window) == 0 and len(right_window) != 0):
+				current_window = [np.max(current_window), 
+				0., 0., 0., 0., 0., 
+				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+			elif (len(left_window) != 0 and len(right_window) == 0):
+				current_window = [np.max(current_window), 
+				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+				0., 0., 0., 0., 0.]
+			else:
+				print('error lens windows left and right+++++++++++++++++++++')
+			
+			
+			
+			# print(len(to_append))
 			if config_NNmodel['normalization'] == 'per_window':
-				to_append = to_append / np.max(np.absolute(to_append))
+				current_window = current_window / np.max(np.absolute(current_window))
 				print('normalization per window')
-			features.append(to_append)
+			# print(type(features))
+			# print(type(to_append))
+			features.append(current_window)
 
 		master_classification.append(classification[count])
-
-check = 0
-while check != -1:
-	print('Classification: ', master_classification[check])
-	plt.plot(features[check])
-	plt.show()
-	check = input('Window to check: ')
-	check = int(check)
+print('total number windows = ', len(features))
+# check = 0
+# while check != -1:
+	# print('Classification: ', master_classification[check])
+	# plt.plot(features[check])
+	# plt.show()
+	# check = input('Window to check: ')
+	# check = int(check)
 	
 	
-# sys.exit()
 # Neuronal Network
 clf = MLPClassifier(solver=config_NNmodel['solver'], alpha=config_NNmodel['alpha'],
 hidden_layer_sizes=config_NNmodel['hidden_layer_sizes'], random_state=config_NNmodel['random_state'],
 activation=config_NNmodel['activation'], tol=config_NNmodel['tol'], verbose=True,
 max_iter=config_NNmodel['max_iter'])
 
+# 
+# # 
+
+# print(type(features[0]))
+
+# print(type(features[0][0]))
+
+# print(type(master_classification[0]))
+
+
+
+# print(len(features[0]))
+# print(len(master_classification[0]))
+# print(type(features))
+# print(type(features[0]))
+# print(features)
+
+# caca = []
+# for i in range(len(features)):
+	# # caca[i] = [i, i+1, i+2]
+	# # print(features[i])
+	# # print(type(features[i]))
+	# # print(type(features[i][i]))
+	# # queso = [float(i), float(i+1), float(i+2)]
+	# queso = features[i]
+	# # print(queso)
+	# caca.append(queso)
+
+# features = caca
+
+
+# sys.exit()
+# print(features)
+# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
+# print(type(features))
+# print(type(master_classification))
+# print(type(features[0]))
+# print(len(features))
+# print(len(master_classification))
 
 clf.fit(features, master_classification)
-
 
 # Save pickle model
 clf_pickle_info = [config_NNmodel, clf]

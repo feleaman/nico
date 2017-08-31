@@ -284,6 +284,34 @@ for window in windows:
 	if config_model['normalization'] == 'per_window':
 		print('normalization per window')
 		window = window / np.max(np.absolute(window))
+	
+	
+	# current_window = window
+	# pos_max = np.argmax(current_window)
+	# left_window = current_window[0:pos_max]
+	# right_window = current_window[pos_max:]
+	# if (len(left_window) != 0 and len(right_window) != 0):
+		# current_window = [np.max(current_window), 
+		# np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		# np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	# elif (len(left_window) == 0 and len(right_window) != 0):
+		# current_window = [np.max(current_window), 
+		# 0., 0., 0., 0., 0., 
+		# np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	# elif (len(left_window) != 0 and len(right_window) == 0):
+		# current_window = [np.max(current_window), 
+		# np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		# 0., 0., 0., 0., 0.]
+	# else:
+		# print('error lens windows left and right+++++++++++++++++++++')
+	
+	# window = current_window
+	
+	
+	
+	
+	
+	
 	prediction = clf.predict(window)
 	# print(prediction)
 	# print(type(prediction))
@@ -308,6 +336,7 @@ ax.set_ylabel('Amplitude')
 ax.set_xlabel('Time s')
 plt.show()
 
+sys.exit()
 
 
 # fp = 0

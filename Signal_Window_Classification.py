@@ -223,6 +223,7 @@ def StartOld():
 	rootsave.destroy()
 	print(filesave)
 	extention = find_extention(filesave)
+	print(extention)
 	if extention == 'txt':
 		classification = np.loadtxt(filesave)
 	elif extention == 'pkl':
@@ -230,12 +231,15 @@ def StartOld():
 		classification = dog['classification']
 	else:
 		print('wrong extention')
+	if filename1 != dog['filename']:
+		print('wrong filenames starting with old')
 	
 		
 	classification = [int(classification[i]) for i in range(len(classification))]
 	count = len(classification)
 	print(classification)
 	print("Windows already analized: ", count)
+	print("Windows to be analized: ", n_windows - count)
 	
 	
 	
@@ -297,7 +301,7 @@ print(filename1)
 
 
 config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
-'channel':args.channel}
+'channel':args.channel, 'start_in':0.0005}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
@@ -344,11 +348,22 @@ x1 = x1[0:n_points]
 x1raw = x1
 
 
+
+
+
+
 dt = 1.0/fs
 n_points = len(x1)
 tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
 traw = t
+
+	
+
+if config_analysis['start_in'] != 0:
+	print('with start in')
+	x1 = x1[int(config_analysis['start_in']*fs):]
+	t = t[int(config_analysis['start_in']*fs):]
 
 
 
