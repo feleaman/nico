@@ -99,3 +99,15 @@ def butter_lowpass(x, fs, freq, order, warm=None):
 		x_filt = x_filt[warm:]
 	
 	return x_filt
+
+def median_filter(data, points, same_length):
+	n = len(data)
+	new_n = n + 1 - points
+	new_data = np.ones(new_n)
+	for i in range(new_n):
+		short_array = data[i:i+points]
+		new_data[i] = np.median(short_array)
+	if same_length == True:
+		print('Same length median filter ON')
+		new_data = np.interp(x=np.linspace(0, new_n-1, num=n), xp=np.linspace(0, new_n-1, num=new_n), fp=new_data)
+	return new_data

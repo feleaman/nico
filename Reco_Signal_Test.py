@@ -16,7 +16,7 @@ from tkinter import Button
 import os.path
 import sys
 sys.path.insert(0, './lib') #to open user-defined functions
-
+from scipy.signal import medfilt
 from m_open_extension import *
 from m_fft import *
 from m_demodulation import *
@@ -69,8 +69,29 @@ def read_pickle(pickle_name):
 	pickle_data = pickle.load(pik)
 	return pickle_data
 
+def leftright_stats(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
 
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		0., 0., 0., 0., 0., 
+		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.max(window), 
+		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		0., 0., 0., 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
+
+
 
 root = Tk()
 root.withdraw()
@@ -123,7 +144,8 @@ root.destroy()
 config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':args.power2,
 'channel':args.channel}
 
-config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
+config_filter = {'analysis':False, 'type':'median', 'median_kernel':5,
+'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
 # config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
@@ -195,10 +217,10 @@ if config_filter['analysis'] == True:
 		order = config_filter['params'][1]
 		freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
 		b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
-		x1 = signal.filtfilt(b, a, x1)
+		x = signal.filtfilt(b, a, x)
 	elif config_filter['type'] == 'median':
 		print('Median')
-		x1 = scipy.signal.medfilt(x1)
+		x = scipy.signal.medfilt(x, kernel_size=config_filter['median_kernel'])
 
 #Autocorrelation
 # if config_autocorr['analysis'] == True:
@@ -238,7 +260,7 @@ if config_diff['analysis'] == True:
 	else:
 		print('Error assignment diff')	
 
-if (config_demod['analysis'] == True or config_filter['analysis'] == True):
+if (config_demod['analysis'] == True or (config_filter['analysis'] == True and config_filter['type'] == 'bandpass')):
 	if (config_demod['offwarming'] == True and config_demod['mode'] == 'butter'):
 		print('Warm Warning')
 		warm = config_demod['warming_points']
@@ -306,13 +328,14 @@ for window in windows:
 		# print('error lens windows left and right+++++++++++++++++++++')
 	
 	# window = current_window
+	# values = window
+	values = leftright_stats(window)
 	
 	
 	
 	
 	
-	
-	prediction = clf.predict(window)
+	prediction = clf.predict(values)
 	# print(prediction)
 	# print(type(prediction))
 	# print(type(prediction[0]))

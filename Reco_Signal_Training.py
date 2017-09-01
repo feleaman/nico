@@ -69,6 +69,68 @@ else:
 	print('Error fs assignment')
 	
 #+++++++++++++++++++++++++++FUNCTIONS++++++++++++++++++++++++++++++++++++++++++
+def leftright_stats(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		0., 0., 0., 0., 0., 
+		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.max(window), 
+		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		0., 0., 0., 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
+# def leftright_stats_quantils(window):
+	# pos_max = np.argmax(window)
+	# left_window = window[0:pos_max]
+	# right_window = window[pos_max:]
+
+	# if (len(left_window) != 0 and len(right_window) != 0):
+		# values = [np.max(window), 
+		# np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		# np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	# elif (len(left_window) == 0 and len(right_window) != 0):
+		# values = [np.max(window), 
+		# 0., 0., 0., 0., 0., 
+		# np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	# elif (len(left_window) != 0 and len(right_window) == 0):
+		# values = [np.max(window), 
+		# np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		# 0., 0., 0., 0., 0.]
+	# else:
+		# print('error lens windows left and right+++++++++++++++++++++')
+	# return values
+
+
+def n_per_intervals(data, interval, divisions):
+	data = sorted(data)
+	save = 0
+	print(data)
+	values = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			save = cont + save
+	return values
+	
+
 def save_pickle(pickle_name, pickle_data):
 	pik = open(pickle_name, 'wb')
 	pickle.dump(pickle_data, pik)
@@ -79,6 +141,41 @@ def read_pickle(pickle_name):
 	pickle_data = pickle.load(pik)
 	return pickle_data
 
+
+#+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
+hh = [-1., 0.21, 0.3 ,0.8, 0.4, -0.3, 0., 0.9, 0.6, 0.8, -0.3, -0.9, -0.96]
+juju = n_per_intervals(hh, [-1., 1.], 10)
+print(juju)
+print(np.sum(juju))
+print(len(hh))
+sys.exit()
+
+
+
+
+
+
+
+
+config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':'various',
+'channel':args.channel}
+
+config_filter = {'analysis':False, 'type':'median', 'median_kernel':5,
+'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
+
+# config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
+
+config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
+'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3], 'warming':False,
+'warming_points':20000}
+#When hilbert is selected, the other parameters are ignored
+
+config_diff = {'analysis':False, 'length':1, 'same':True}
+
+
+config_NNmodel = {'normalization': 'per_signal', 
+'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(300, 30, 3),
+'random_state':1, 'activation':'tanh', 'tol':1.e-8, 'max_iter':200000}
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 n_files = input('Number of files to use for training: ')
@@ -111,6 +208,7 @@ for i in range(n_files):
 	#Classifications
 	classification_pickle = filedialog.askopenfilename()
 	info_classification_pickle = read_pickle(classification_pickle)
+
 	classification_in_file = info_classification_pickle['classification']
 	Classifications_per_file.append(classification_in_file)
 	checked_windows_in_file = len(classification_in_file)
@@ -140,16 +238,13 @@ for i in range(n_files):
 	if info_classification_pickle['config_analysis']['start_in'] != 0:
 		start_in_time = info_classification_pickle['config_analysis']['start_in']
 		print(start_in_time)
-		print(type(start_in_time))
 		print('with start in!!!!+++++++++++')
 		# Flags_start_in.append(True)
 		print(int(start_in_time*fs))
 		print(len(x))
-		print(type(x))
 		print(x.shape)
 		x = x[int(start_in_time*fs):]
 		print(len(x))
-		print(type(x))
 		print(x.shape)
 		Windows_per_file.append(checked_windows_in_file-1)
 		# print(int(start_in_time*fs))
@@ -157,8 +252,24 @@ for i in range(n_files):
 		print('Classification pickel not having start in')
 		Windows_per_file.append(checked_windows_in_file)
 		print(len(x))
-		print(type(x))
 		print(x.shape)
+	
+	
+	if config_filter['analysis'] == True:
+		print('+++Filter:')
+		if config_filter['type'] == 'bandpass':
+			print('Bandpass')
+			f_nyq = 0.5*fs
+			order = config_filter['params'][1]
+			freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
+			b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
+			x = signal.filtfilt(b, a, x)
+		elif config_filter['type'] == 'median':
+			print('Median')
+			x = scipy.signal.medfilt(x, kernel_size=config_filter['median_kernel'])
+	
+	
+	
 	
 	
 	# sys.exit()
@@ -173,7 +284,9 @@ for i in range(n_files):
 		sys.exit()
 	
 	
-	
+config_NNmodel['files'] = Filenames
+config_NNmodel['windows_per_file'] = Windows_per_file
+
 	
 # fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 # ax[0].plot(Signals[0])
@@ -198,24 +311,7 @@ root.destroy()
 # pickle_classification = 'classification_20170825_131154_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl'
 
 
-config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0.4, 'savepik':True, 'power2':'various',
-'channel':args.channel}
 
-config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
-
-# config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
-
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
-'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3], 'warming':False,
-'warming_points':20000}
-#When hilbert is selected, the other parameters are ignored
-
-config_diff = {'analysis':False, 'length':1, 'same':True}
-
-
-config_NNmodel = {'normalization': 'per_signal', 
-'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(100, 10),
-'random_state':1, 'activation':'tanh', 'tol':1.e-7, 'max_iter':5000, 'files':Filenames, 'windows_per_file':Windows_per_file}
 
 
 
@@ -327,81 +423,35 @@ window_points = int(window_time*fs)
 window_advance = int(window_points*config_analysis['WindowAdvance'])
 
 for x, classification, n_windows in zip(Signals, Classifications_per_file, Windows_per_file):
-	
-	# if config_analysis['Overlap'] == True:
-		# n_windows = int((n_points - window_points)/window_advance) + 1
-	# else:
-		# n_windows = int(n_points/window_points)
-	# print('Number of windows: ', n_windows)
 	if config_NNmodel['normalization'] == 'per_signal':
 		x = x / np.max(np.absolute(x))
 		x = x.tolist()
 		print('normalization per signal!!!!!!')
-		
-		# plt.plot(x)
-		# plt.show()
-
-	# if info_classification['n_windows'] != n_windows:
-		# print('Wrong n_windows!!!')
-		# sys.exit()
-
+	
 	for count in range(n_windows):
 		if config_analysis['Overlap'] == True:
-			current_window = x[count*window_advance:window_points+window_advance*count]
-			
-			pos_max = np.argmax(current_window)
-			left_window = current_window[0:pos_max]
-			right_window = current_window[pos_max:]
-			if (len(left_window) != 0 and len(right_window) != 0):
-				current_window = [np.max(current_window), 
-				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-			elif (len(left_window) == 0 and len(right_window) != 0):
-				current_window = [np.max(current_window), 
-				0., 0., 0., 0., 0., 
-				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-			elif (len(left_window) != 0 and len(right_window) == 0):
-				current_window = [np.max(current_window), 
-				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-				0., 0., 0., 0., 0.]
-			else:
-				print('error lens windows left and right+++++++++++++++++++++')
+			current_window = x[count*window_advance:window_points+window_advance*count]	
 			
 			if config_NNmodel['normalization'] == 'per_window':
-				current_window = current_window / np.max(np.absolute(current_window))
 				print('normalization per window')
-			features.append(current_window)
+				current_window = current_window / np.max(np.absolute(current_window))	
+				
+			values = leftright_stats(current_window)
+			# values = current_window
+			features.append(values)
 		else:
 			current_window = x[count*window_points:(count+1)*window_points]
-			pos_max = np.argmax(current_window)
-			left_window = current_window[0:pos_max]
-			right_window = current_window[pos_max:]
 			
 			
-			if (len(left_window) != 0 and len(right_window) != 0):
-				current_window = [np.max(current_window), 
-				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-			elif (len(left_window) == 0 and len(right_window) != 0):
-				current_window = [np.max(current_window), 
-				0., 0., 0., 0., 0., 
-				np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-			elif (len(left_window) != 0 and len(right_window) == 0):
-				current_window = [np.max(current_window), 
-				np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-				0., 0., 0., 0., 0.]
-			else:
-				print('error lens windows left and right+++++++++++++++++++++')
-			
-			
-			
-			# print(len(to_append))
 			if config_NNmodel['normalization'] == 'per_window':
 				current_window = current_window / np.max(np.absolute(current_window))
 				print('normalization per window')
-			# print(type(features))
-			# print(type(to_append))
-			features.append(current_window)
+			
+			
+			values = leftright_stats(current_window)
+			# values = current_window
+			
+			features.append(values)
 
 		master_classification.append(classification[count])
 print('total number windows = ', len(features))
