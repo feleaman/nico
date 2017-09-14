@@ -69,6 +69,27 @@ def read_pickle(pickle_name):
 	pickle_data = pickle.load(pik)
 	return pickle_data
 
+def n_per_intervals(data, interval, divisions):
+	data = sorted(data)
+	save = 0
+	values = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	values = values.tolist()
+	return values
+
 def leftright_stats(window):
 	pos_max = np.argmax(window)
 	left_window = window[0:pos_max]
@@ -329,9 +350,11 @@ for window in windows:
 	
 	# window = current_window
 	# values = window
-	values = leftright_stats(window)
 	
-	
+	basic_stats_sides = leftright_stats(window)			
+	points_intervals = n_per_intervals(window, [-1., 1.], 10)			
+	values = basic_stats_sides + points_intervals			
+	# features.append(values)
 	
 	
 	
@@ -343,7 +366,7 @@ for window in windows:
 t_burst = []
 amp_burst = []
 for i in range(len(predictions)):
-	if predictions[i] == 1:
+	if predictions[i] != 0:
 		t_burst.append(i*window_time)
 		amp_burst.append(xraw[int(i*window_time*fs)])
 

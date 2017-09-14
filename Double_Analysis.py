@@ -1,9 +1,10 @@
 # Double_Features.py
-# Last updated: 16.08.2017 15:58 by Felix Leaman
+# Last updated: 14.09.2017 by Felix Leaman
 # Description:
 # Code for opening 2 x a .mat or .tdms data files with single channel and plotting different types of analysis
-# The file and channel is selected by the user
+# The files and channel must be selected by the user
 # Channel must be 'AE_Signal', 'Koerperschall', or 'Drehmoment'. Defaults sampling rates are 1000kHz, 1kHz and 1kHz, respectively
+# Power2 option let the user to analyze only 2^Power2 points of each file
 
 #++++++++++++++++++++++ IMPORT MODULES AND FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++
 import numpy as np
@@ -17,31 +18,20 @@ import skimage.filters
 import os.path
 import sys
 sys.path.insert(0, './lib') #to open user-defined functions
-
+import argparse
 from m_open_extension import *
 from m_fft import *
 from m_demodulation import *
 from m_denois import *
 from m_det_features import *
 from m_processing import *
-
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-import argparse
-
 parser = argparse.ArgumentParser()
-
 parser.add_argument('--channel', nargs='?')
-# channel = 'AE_Signal'
-# channel = 'Koerperschall'
-# channel = 'Drehmoment'
-
-
 parser.add_argument('--power2', nargs='?')
-# n_points = 2**power2
-
 parser.add_argument('--type', nargs='?')
 args = parser.parse_args()
 
@@ -54,16 +44,12 @@ else:
 if args.power2 != None:
 	n_points = 2**int(args.power2)
 
-
-
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
-
 root = Tk()
 root.withdraw()
 root.update()
 filename1 = filedialog.askopenfilename()
 filename2 = filedialog.askopenfilename()
-
 root.destroy()
 
 point_index = filename1.find('.')
@@ -79,9 +65,8 @@ elif extension == 'tdm': #tdms
 	x1 = f_open_tdms(filename1, channel)
 	x2 = f_open_tdms(filename1, channel)
 
-
 filename1 = os.path.basename(filename1) #changes from path to file
-filename2 = os.path.basename(filename2) #changes from path to file
+filename2 = os.path.basename(filename2)
 
 #++++++++++++++++++++++ SAMPLING +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if channel == 'Koerperschall':
@@ -95,9 +80,9 @@ else:
 
 if args.power2 == None:
 	n_points = 2**(max_2power(len(x1)))
+
 x1 = x1[0:n_points]
 x2 = x2[0:n_points]	
-
 
 dt = 1.0/fs
 n_points = len(x1)
@@ -105,44 +90,39 @@ tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
+config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
+'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
 
-config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Hist':False}
-
-
-config_filter = {'analysis':True, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
-
+config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
-
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
-'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 50.0, 3]}
+config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
+'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 500.0, 3]}
 #When hilbert is selected, the other parameters are ignored
 
-config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'binary', 'color':'gray'}
+config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'colormesh', 'color':'gray'}
 #colors= gray, inferno, Spectral, copper...
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
+
+config_CyclicSpectrum = {'segments':100, 'freq_range':[10.0e3, 450.0e3], 'window':'hanning', 'mode':'magnitude', 'log':False, 'off_PSD':True,
+'kHz':True, 'warm_points':None}
+
 #++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 fig = [[] for element in config_analysis if config_analysis[element] == True]
 fig.append([])
 fig[0], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x1, fs=fs, threshold=8*signal_rms(x1), t_window=0.002)
-ax[0].plot(t, x1, '-o')
-# ax[0].plot(t_burst_corr, amp_burst_corr, 'ro')
+ax[0].plot(t, x1)
 ax[0].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename1)
 ax[0].set_ylabel('Amplitude')
 
-# n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst = id_burst_threshold(x=x2, fs=fs, threshold=8*signal_rms(x2), t_window=0.002)
-ax[1].plot(t, x2, '-o')
-# ax[1].plot(t_burst_corr, amp_burst_corr, 'ro')
+ax[1].plot(t, x2)
 ax[1].set_title(channel + ' ' + 'Raw WFM' + '\n' + filename2)
 ax[1].set_ylabel('Amplitude')
 ax[1].set_xlabel('Time s')
-# plt.show()
 
 
 #Filter
@@ -201,13 +181,6 @@ if config_demod['analysis'] == True:
 	else:
 		print('Error assignment demodulation')
 
-
-
-
-# print(scipy.signal.find_peaks_cwt(vector=x1, widths=np.arange(1, 4))*dt)
-
-
-
 #++++++++++++++++++++++ FFT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if config_analysis['FFT'] == True:
 	magX1, f, df = mag_fft(x1, fs)
@@ -246,15 +219,33 @@ if config_analysis['STPSD'] == True:
 
 
 #++++++++++++++++++++++ CEPSTRUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 if config_analysis['Cepstrum'] == True:
 	cepstrumX1, tc, dtc = cepstrum_real(x1, fs)
 	cepstrumX2, tc, dtc = cepstrum_real(x2, fs)
 
 
+#++++++++++++++++++++++ CYCLIC SPECTRUM +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+if config_analysis['CyclicSpectrum'] == True:
+	segments = config_CyclicSpectrum['segments']
+	window = config_CyclicSpectrum['window']
+	mode = config_CyclicSpectrum['mode']
+	freq_range = config_CyclicSpectrum['freq_range']
+	
+	CyclicSpectrum1, a_CyclicSpectrum1, f_CyclicSpectrum1 = Cyclic_Spectrum(x=x1, fs=fs, segments=segments, freq_range=freq_range, warm_points=config_CyclicSpectrum['warm_points'])
+	CyclicSpectrum2, a_CyclicSpectrum2, f_CyclicSpectrum2 = Cyclic_Spectrum(x=x2, fs=fs, segments=segments, freq_range=freq_range, warm_points=config_CyclicSpectrum['warm_points'])
+	if config_CyclicSpectrum['off_PSD'] == True:
+		for i in range(len(CyclicSpectrum1)):
+			CyclicSpectrum1[i][0] = 0.			
+		for i in range(len(CyclicSpectrum2)):
+			CyclicSpectrum2[i][0] = 0.
+
+	if config_CyclicSpectrum['log'] == True:
+		CyclicSpectrum1 = np.log(CyclicSpectrum1)
+		CyclicSpectrum2 = np.log(CyclicSpectrum2)
+
 #++++++++++++++++++++++ MULTI PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 count = 1
-# fig = [[] for element in config_analysis if config_analysis[element] == True]
+
 for element in config_analysis:
 	if config_analysis[element] == True:
 		if element == 'WFM':
@@ -327,25 +318,19 @@ for element in config_analysis:
 				fig[count].colorbar(map, ax=ax[0], extendrect=True, extend='both', extendfrac=0)
 				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
 					ax[1].set_ylim((0, 1.5*config_demod['filter'][1]))
-			
-			
+
 			
 			elif config_stft['type'] == 'binary':
-				# stftX1 = stftX1 / np.max(np.abs(stftX1))
-
 				stftX1 = img_as_uint(stftX1)
 				stftX1 = skimage.filters.median(image=stftX1, selem=np.ones((3, 3)))
 
-				
 				stftX2 = img_as_uint(stftX2)
 				stftX2 = skimage.filters.median(image=stftX2, selem=np.ones((3, 3)))
 				
 				
 				thr1 = skimage.filters.threshold_otsu(stftX1)
 				thr2 = skimage.filters.threshold_otsu(stftX2)
-				
-				
-				
+
 				for i in range(len(stftX1)):
 					for j in range(len(stftX1[0])):
 						if stftX1[i][j] > thr1:
@@ -373,15 +358,7 @@ for element in config_analysis:
 				if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
 					ax[1].set_ylim((0, 1.5*config_demod['filter'][1]))
 				
-				# binis = stftX1[0]				
-				# bursts = 0
-				# for s in range(len(binis)-1):
-					# if (binis[s] == 0 and binis[s+1] == 1):
-						# bursts = bursts + 1
-				# print(bursts)
-			
-			
-			
+
 			
 		elif element == 'STPSD':			
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
@@ -398,8 +375,7 @@ for element in config_analysis:
 			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter'):
 				ax[1].set_ylim((0, config_demod['filter'][1]))
 			
-			
-			
+
 			
 		elif element == 'Cepstrum':		
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True)
@@ -435,7 +411,41 @@ for element in config_analysis:
 			ax[1].set_xlabel('Bins')
 
 			
+		elif element == 'CyclicSpectrum':
+			map = []
+			vmax = np.max([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2)])
+			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+			if config_CyclicSpectrum['kHz'] == True:
+				fact = 1000.
+				yscalename = 'Frequency kHz'
+			else:
+				fact = 1
+				yscalename = 'Frequency Hz'
 			
+			map.append(ax[0].pcolormesh(a_CyclicSpectrum1, f_CyclicSpectrum1/fact, CyclicSpectrum1, cmap='Purples', vmax=vmax))
+
+			ax[0].set_title(filename1)
+			ax[0].set_ylabel(yscalename)
+			ax[0].set_xlabel('Cyclic Frequency Hz')
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[0].set_ylim((0, config_demod['filter'][1]))
+			for tik in ax[0].get_xticklabels():
+				tik.set_visible(True)
+
+			
+			map.append(ax[1].pcolormesh(a_CyclicSpectrum2, f_CyclicSpectrum2/fact, CyclicSpectrum2, cmap='Purples', vmax=vmax))
+			ax[1].set_title(filename2)
+			ax[1].set_ylabel(yscalename)
+			ax[1].set_xlabel('Cyclic Frequency Hz')
+			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
+				ax[1].set_ylim((0, config_demod['filter'][1]))
+			for tik in ax[1].get_yticklabels():
+				tik.set_visible(True)
+			for tik in ax[1].get_xticklabels():
+				tik.set_visible(True)
+				
+			indmax = np.argmax([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2)])
+			fig[count].colorbar(map[indmax], ax=ax.ravel().tolist())
 			
 
 		count = count + 1

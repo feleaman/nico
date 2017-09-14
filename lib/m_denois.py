@@ -67,7 +67,7 @@ def fourier_filter(x, fs, type, freqs):
 	
 	
 
-def butter_bandpass(x, fs, freqs, order, warm=None):
+def butter_bandpass(x, fs, freqs, order, warm_points=None):
 	f_nyq = 0.5*fs
 	
 	
@@ -78,13 +78,13 @@ def butter_bandpass(x, fs, freqs, order, warm=None):
 	b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
 	x_filt = signal.filtfilt(b, a, x)
 	
-	if warm != None:
-		x_filt = x_filt[warm:]
+	if warm_points != None:
+		x_filt = x_filt[warm_points:]
 	
 	return x_filt
 
 
-def butter_lowpass(x, fs, freq, order, warm=None):
+def butter_lowpass(x, fs, freq, order, warm_points=None):
 	f_nyq = 0.5*fs
 	
 	
@@ -95,7 +95,7 @@ def butter_lowpass(x, fs, freq, order, warm=None):
 	b, a = signal.butter(order, freq, btype='lowpass')
 	x_filt = signal.filtfilt(b, a, x)
 	
-	if warm != None:
+	if warm_points != None:
 		x_filt = x_filt[warm:]
 	
 	return x_filt

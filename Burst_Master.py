@@ -29,13 +29,7 @@ from os.path import isfile, join
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
-def max_cspectrum(ciclicspectrum):
-	max = 0.0
-	for i in range(len(ciclicspectrum)):
-		pmax = np.max(ciclicspectrum[i])
-		if pmax > max:
-			max = pmax
-	return max
+
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 import argparse
@@ -70,60 +64,32 @@ if args.showplot != None:
 
 	
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
-# #OK
-# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/OK'
-# file_ok_train_1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160506_142422.mat')
-# file_ok_train_2 = join(mypath, 'V2_9_n1500_M80_AE_Signal_20160506_145215.mat')
 
-# #Fault
-# mypath = 'C:/Felix/Data/CNs_Getriebe/Paper_Bursts/n1500_M80/Fault'
-# file_fault_train_1 = join(mypath, 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat')
-# file_fault_train_2 = join(mypath, 'V2_9_n1500_M80_AE_Signal_20160928_151441.mat')
+root = Tk()
+root.withdraw()
+root.update()
+filename1 = filedialog.askopenfilename()
+filename2 = filedialog.askopenfilename()
 
+root.destroy()
 
+point_index = filename1.find('.')
+extension = filename1[point_index+1] + filename1[point_index+2] + filename1[point_index+3]
 
-#OK
-mypath = 'C:/Felix\Data/CNs_Getriebe/Paper_Bursts/Other_OC/OK'
-file_ok_train_1 = join(mypath, 'V1_6_n1500_M40_AE_Signal_20160506_140849.mat')
-#file_ok_train_2 = join(mypath, 'V1_7_n0500_M80_AE_Signal_20160506_141407.mat')
-file_ok_train_2 = join(mypath, 'V1_8_n1000_M80_AE_Signal_20160506_141822.mat')
+if extension == 'mat':
+	x1 = f_open_mat(filename1, channel)
+	x1 = np.ndarray.flatten(x1)
+	x2 = f_open_mat(filename2, channel)
+	x2 = np.ndarray.flatten(x2)
 
-
-#Fault
-mypath = 'C:/Felix\Data/CNs_Getriebe/Paper_Bursts/Other_OC/Fault'
-file_fault_train_1 = join(mypath, 'V1_6_n1500_M40_AE_Signal_20160928_143502.mat')
-#file_fault_train_2 = join(mypath, 'V1_7_n500_M80_AE_Signal_20160928_143840.mat')
-file_fault_train_2 = join(mypath, 'V1_8_n1000_M80_AE_Signal_20160928_144217.mat')
+elif extension == 'tdm': #tdms
+	x1 = f_open_tdms(filename1, channel)
+	x2 = f_open_tdms(filename1, channel)
 
 
+filename1 = os.path.basename(filename1) #changes from path to file
+filename2 = os.path.basename(filename2) #changes from path to file
 
-x_ok_train_1 = f_open_mat(file_ok_train_1, channel)
-x_ok_train_1 = np.ndarray.flatten(x_ok_train_1)
-
-x_ok_train_2 = f_open_mat(file_ok_train_2, channel)
-x_ok_train_2 = np.ndarray.flatten(x_ok_train_2)
-
-x_fault_train_1 = f_open_mat(file_fault_train_1, channel)
-x_fault_train_1 = np.ndarray.flatten(x_fault_train_1)
-
-x_fault_train_2 = f_open_mat(file_fault_train_2, channel)
-x_fault_train_2 = np.ndarray.flatten(x_fault_train_2)
-
-# x_ok_train_1 = f_open_mat(file_ok_train_1, channel)
-# x_ok_train_1 = np.ndarray.flatten(x_ok_train_1)
-
-# x_ok_train_1 = f_open_mat(file_ok_train_1, channel)
-# x_ok_train_1 = np.ndarray.flatten(x_ok_train_1)
-
-
-
-file_ok_train_1 = os.path.basename(file_ok_train_1) #changes from path to file
-file_ok_train_2 = os.path.basename(file_ok_train_2) #changes from path to file
-# file_ok_test = os.path.basename(file_ok_test) #changes from path to file
-
-file_fault_train_1 = os.path.basename(file_fault_train_1) #changes from path to file
-file_fault_train_2 = os.path.basename(file_fault_train_2) #changes from path to file
-# file_fault_test = os.path.basename(file_fault_test) #changes from path to file
 
 #++++++++++++++++++++++ SAMPLING +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if channel == 'Koerperschall':
@@ -134,48 +100,35 @@ elif channel == 'AE_Signal':
 	fs = 1000000.0
 else:
 	print('Error fs assignment')
+dt = 1.0/fs
 
 if args.power2 == None:
 	n_points = 2**(max_2power(len(x_ok_train_1))) #Not optimized
 
 
-x_ok_train_1 = x_ok_train_1[0:n_points]
-x_ok_train_2 = x_ok_train_2[0:n_points]
+x1 = x1[0:n_points]
+x2 = x2[0:n_points]
 
-x_fault_train_1 = x_fault_train_1[0:n_points]
-x_fault_train_2 = x_fault_train_2[0:n_points]
-
-
-dt = 1.0/fs
-# n_points = len(x1)
 tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
 
 traw = t
-x_ok_train_1raw = x_ok_train_1
-x_ok_train_2raw = x_ok_train_2
-
-x_fault_train_1raw = x_fault_train_1
-x_fault_train_2raw = x_fault_train_2
+x1raw = x1
+x2raw = x2
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
-
+config_analysis = {'WFM':False, 'STFT':False, 'CyclicSpectrum':False}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
-
-
-config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
+config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.0e3, 170.0e3] , 3], 
 'rectification':'absolute_value', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3], 'offwarming':True}
 #When hilbert is selected, the other parameters are ignored
 #When mixed is selected, filter is ignored
 
-
-config_diff = {'analysis':True, 'length':1, 'same':True}
+config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
 config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'colormesh', 'color':'gray'}
@@ -366,16 +319,16 @@ threshold_fault_train_2 = fix_threshold
 
 
 #++++++++++++++++++++++ STFT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# if config_analysis['STFT'] == True:
-	# segments = config_stft['segments']
-	# window = config_stft['window']
-	# mode = config_stft['mode']
+if config_analysis['STFT'] == True:
+	segments = config_stft['segments']
+	window = config_stft['window']
+	mode = config_stft['mode']
 	
-	# stftX1, f_stft, df_stft, t_stft = shortFFT(x=x1, fs=fs, segments=segments, window=window, mode=mode)
-	# stftX2, f_stft, df_stft, t_stft = shortFFT(x=x2, fs=fs, segments=segments, window=window, mode=mode)
-	# if config_stft['log-scale'] == True:
-		# stftX1 = np.log(stftX1)
-		# stftX2 = np.log(stftX2)
+	stftX1, f_stft, df_stft, t_stft = shortFFT(x=x1, fs=fs, segments=segments, window=window, mode=mode)
+	stftX2, f_stft, df_stft, t_stft = shortFFT(x=x2, fs=fs, segments=segments, window=window, mode=mode)
+	if config_stft['log-scale'] == True:
+		stftX1 = np.log(stftX1)
+		stftX2 = np.log(stftX2)
 
 
 #++++++++++++++++++++++ PSD +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -48,105 +48,41 @@ def shortPSD(x, fs, segments):
 		stpsdX.append(psd_segment)
 	
 	t_stpsd = [i/fs for i in range(n_segments)]
-	# stpsdX = np.array([stpsdX])
-	# stpsdX.transpose()
+
 	t_stpsd = np.linspace(0.0, n_x/fs, num=segments)
-	# print(len(stpsdX[1]))
-	# print(len(f_stpsd))
-	# print(len(t_stpsd))
-	# print(stpsdX.shape)
+
 	stpsdX = list(map(list, zip(*stpsdX)))
-	# print(stpsdX[1])
-	
-	# print(stpsdX.shape)
+
 	df = f_stpsd[2] - f_stpsd[1]
 	return stpsdX, f_stpsd, df, t_stpsd	
 
+def max_cspectrum(ciclicspectrum):
+	max = 0.0
+	for i in range(len(ciclicspectrum)):
+		pmax = np.max(ciclicspectrum[i])
+		if pmax > max:
+			max = pmax
+	return max
 
-def Cyclic_Spectrum(x, fs, segments, freq_range):
+def Cyclic_Spectrum(x, fs, segments, freq_range, warm_points):
 	n_x = len(x)
-	# f_max = fs/2.0
-	freqs_limits = np.linspace(start=freq_range[0], stop=freq_range[1], num=segments+1)
-	
-	
+	freqs_limits = np.linspace(start=freq_range[0], stop=freq_range[1], num=segments+1)	
 	filtered_x = []
 	for p in range(segments):
-		# print(x)
 		resp = x
-		# filtered_x.append(fourier_filter(x=x, fs=fs, type='bandpass', freqs=[p*f_range, (p+1)*f_range]))
-		filtered_x.append(butter_bandpass(x=x, fs=fs, freqs=[freqs_limits[p], freqs_limits[p+1]], order=3, warm=400))
-		# if p == 0:
-			# plt.figure(1)
-			# plt.plot(resp)
-			# plt.figure(2)
-			# plt.plot(filtered_x[p])
-			# plt.show()
-	
-	
-	
-	# plt.plot(filtered_x[20])
-	# plt.show()
+		filtered_x.append(butter_bandpass(x=x, fs=fs, freqs=[freqs_limits[p], freqs_limits[p+1]], order=3, warm_points=warm_points))	
 	CyclicSpectrum = []
 	maxvec = []
 	for i in range(segments):
-		print(i)
-		# a_CyclicSpectrum, CyclicSpectrumWindow = signal.periodogram(x=filtered_x[i], fs=fs, return_onesided=True, scaling='spectrum')
 		CyclicSpectrumWindow = filtered_x[i]**2.0
 		resp = CyclicSpectrumWindow
-		# CyclicSpectrumWindow = CyclicSpectrumWindow - np.mean(CyclicSpectrumWindow)
-		# CyclicSpectrumWindow = CyclicSpectrumWindow/2.0
-		# CyclicSpectrumWindow = hilbert_demodulation(CyclicSpectrumWindow)
-		CyclicSpectrumWindow = butter_lowpass(x=resp, fs=fs, freq=1000.0, order=3, warm=None)
-		# CyclicSpectrumWindow = imean(CyclicSpectrumWindow)
-		# data = CyclicSpectrumWindow
-		# CyclicSpectrumWindow = np.zeros(len(data))
-		# sum = 0.0
-		# for p in range(len(data)):
-			# sum = sum + data[p]
-			# CyclicSpectrumWindow[p] = sum/(p+1)
-		
+		CyclicSpectrumWindow = butter_lowpass(x=resp, fs=fs, freq=1000.0, order=3, warm_points=None)
 		CyclicSpectrumWindow, a_CyclicSpectrum, da = mag_fft(CyclicSpectrumWindow, fs)
 		CyclicSpectrumWindow = CyclicSpectrumWindow[0:int(1000/da)]
 		a_CyclicSpectrum = a_CyclicSpectrum[0:int(1000/da)]
-		# print(len(a_CyclicSpectrum))
-		# sys.exit()
-		# maxvec.append(np.max(CyclicSpectrumWindow))
 		CyclicSpectrum.append(CyclicSpectrumWindow)
-		
-		
-		
-		# a_CyclicSpectrum = np.array([u for u in range(len(CyclicSpectrumWindow))])
-		
-		# if i == 0:
-			# plt.figure(1)
-			# plt.plot(resp)
-			# plt.figure(2)
-			# plt.plot(CyclicSpectrum[i])
-			# plt.show()
-	
-	
-	# f_CyclicSpectrum = [i*f_range for i in range(segments)]
 	f_CyclicSpectrum = freqs_limits
-	# print(len(CyclicSpectrum[0]))
-	# sys.exit()
-	# for f in range(len(CyclicSpectrum)):
-		# for a in range(int(len(CyclicSpectrum[0])/2)):
-		# # try:
-			# # CyclicSpectrum[a][f] = CyclicSpectrum[a][f] / ((CyclicSpectrum[0][int(f + a/2)])*(CyclicSpectrum[0][int(f - a/2)])**0.5)**0.5
-		# # except:
-			# # CyclicSpectrum[a][f] = CyclicSpectrum[a][f] / ((CyclicSpectrum[0][int(f)])*(CyclicSpectrum[0][int(f)])**0.5)**0.5
-		# print(int(f + a/2))
-		# print(int(f - a/2))
-		# try:
-			# CyclicSpectrum[f][a] = CyclicSpectrum[f][a] / ((CyclicSpectrum[int(f + a/2)][0])*(CyclicSpectrum[int(f - a/2)][0])**0.5)**0.5
-		# except:
-			# # print(f)
-			# # print(a)
-			# CyclicSpectrum[f][a] = CyclicSpectrum[f][a] / ((CyclicSpectrum[int(f)][0])*(CyclicSpectrum[int(f)][0])**0.5)**0.5
-				
-	
-	# print(np.max(maxvec))
-	# print(np.argmax(maxvec, axis=0))
+
 	
 	return CyclicSpectrum, a_CyclicSpectrum, f_CyclicSpectrum
 

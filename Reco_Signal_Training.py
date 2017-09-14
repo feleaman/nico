@@ -115,7 +115,6 @@ def leftright_stats(window):
 def n_per_intervals(data, interval, divisions):
 	data = sorted(data)
 	save = 0
-	print(data)
 	values = np.zeros(divisions)
 	interval_length = (interval[1] - interval[0])/divisions
 	for i in range(divisions):		
@@ -128,6 +127,10 @@ def n_per_intervals(data, interval, divisions):
 		values[i] = cont
 		if cont != 0:
 			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	values = values.tolist()
 	return values
 	
 
@@ -143,12 +146,12 @@ def read_pickle(pickle_name):
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-hh = [-1., 0.21, 0.3 ,0.8, 0.4, -0.3, 0., 0.9, 0.6, 0.8, -0.3, -0.9, -0.96]
-juju = n_per_intervals(hh, [-1., 1.], 10)
-print(juju)
-print(np.sum(juju))
-print(len(hh))
-sys.exit()
+# hh = [-1., 0.21, 0.3 ,0.8, 0.4, -0.3, 0., 0.9, 0.6, 0.8, -0.3, -0.9, -0.96, -0.6, 0., 1.0, -1., 0.2]
+# juju = n_per_intervals(hh, [-1., 1.], 10)
+# print(juju)
+# print(np.sum(juju))
+# print(len(hh))
+# sys.exit()
 
 
 
@@ -174,7 +177,7 @@ config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
 config_NNmodel = {'normalization': 'per_signal', 
-'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(300, 30, 3),
+'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(300, 30),
 'random_state':1, 'activation':'tanh', 'tol':1.e-8, 'max_iter':200000}
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
@@ -436,9 +439,11 @@ for x, classification, n_windows in zip(Signals, Classifications_per_file, Windo
 				print('normalization per window')
 				current_window = current_window / np.max(np.absolute(current_window))	
 				
-			values = leftright_stats(current_window)
-			# values = current_window
+			basic_stats_sides = leftright_stats(current_window)			
+			points_intervals = n_per_intervals(current_window, [-1., 1.], 5)			
+			values = basic_stats_sides + points_intervals			
 			features.append(values)
+			
 		else:
 			current_window = x[count*window_points:(count+1)*window_points]
 			
@@ -448,9 +453,9 @@ for x, classification, n_windows in zip(Signals, Classifications_per_file, Windo
 				print('normalization per window')
 			
 			
-			values = leftright_stats(current_window)
-			# values = current_window
-			
+			basic_stats_sides = leftright_stats(current_window)			
+			points_intervals = n_per_intervals(current_window, [-1., 1.], 5)			
+			values = basic_stats_sides + points_intervals			
 			features.append(values)
 
 		master_classification.append(classification[count])
