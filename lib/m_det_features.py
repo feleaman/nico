@@ -227,6 +227,156 @@ def id_burst_threshold_end(x, fs, threshold, t_window, t_decay):
 	
 	
 	return n_burst_corr, t_burst_corr, amp_burst_corr, t_burst, amp_burst
+
+
+def n_per_intervals(data, interval, divisions):
+	data = sorted(data)
+	save = 0
+	values = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	values = values.tolist()
+	return values
+
+def n_per_10intervals(data, interval):
+	divisions = 10
+	data = sorted(data)
+	save = 0
+	values = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	values = values / 500.0
+	values = values.tolist()
+	return values
+
+def leftright_stats(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		0., 0., 0., 0., 0., 
+		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.max(window), 
+		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
+		0., 0., 0., 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
+def leftright_stats_corr1(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		np.min(left_window), np.std(left_window), stats.kurtosis(np.array(left_window), fisher=True), 
+		np.min(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		0., 0., 0., 
+		np.min(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.max(window), 
+		np.min(left_window), np.std(left_window), stats.kurtosis(np.array(left_window), fisher=True), 
+		0., 0., 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
+def n_per_10intervals_corr1(data, interval):
+	divisions = 10
+	data = sorted(data)
+	save = 0
+	values = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	values = values.tolist()
+	values = [values[3], values[4], values[5], values[6]]
+	return values
+
+def n_per_10intervals_corr1_left_right(data, interval):
+	window = data
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = n_per_10intervals_corr1(left_window, interval) + n_per_10intervals_corr1(right_window, interval)
+		
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [0., 0., 0., 0.] + n_per_10intervals_corr1(right_window, interval)
+		# print(values)
+		# sys.exit()
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = n_per_10intervals_corr1(left_window, interval) + [0., 0., 0., 0.]
+		# print(values)
+		# sys.exit()
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+	
+def n_per_10intervals_left_right(data, interval):
+	window = data
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = n_per_10intervals(left_window, interval) + n_per_10intervals(right_window, interval)
+		
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.] + n_per_10intervals(right_window, interval)
+
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = n_per_10intervals(left_window, interval) + [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
 # def id_burst_threshold2(x, fs, threshold, t_window):
 	# n = len(x)
 	# dt = 1.0/fs

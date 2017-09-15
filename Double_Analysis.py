@@ -90,7 +90,7 @@ tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
+config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
 'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
@@ -99,8 +99,8 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
-config_demod = {'analysis':True, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
-'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 500.0, 3]}
+config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
+'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 500.0, 3], 'warm_points':20000}
 #When hilbert is selected, the other parameters are ignored
 
 config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False, 'type':'colormesh', 'color':'gray'}
@@ -154,19 +154,9 @@ if config_autocorr['analysis'] == True:
 		
 		fftx2 = np.fft.fft(x2)
 		x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
-
-#Differentiation
-if config_diff['analysis'] == True:
-	print('+++Differentiation:')
-	if config_diff['same'] == True:
-		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
-	elif config_diff['same'] == False:
-		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
 	else:
-		print('Error assignment diff')	
-		
+		print('Error assignment autocorrelation')
+
 #Demodulation
 if config_demod['analysis'] == True:
 	print('+++Demodulation:')
@@ -180,6 +170,26 @@ if config_demod['analysis'] == True:
 		type_rect=config_demod['rectification'], dc_value=config_demod['dc_value'])
 	else:
 		print('Error assignment demodulation')
+
+#Differentiation
+if config_diff['analysis'] == True:
+	print('+++Differentiation:')
+	if config_diff['same'] == True:
+		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
+	elif config_diff['same'] == False:
+		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
+	else:
+		print('Error assignment diff')	
+		
+
+warm = 0.0
+if (config_demod['warm_points'] != 0 and config_demod['mode'] == 'butter' and config_demod['analysis'] == True):
+	x1 = x1[config_demod['warm_points']:]
+	x2 = x2[config_demod['warm_points']:]
+	t = t[config_demod['warm_points']:]
+	warm = float(config_demod['warm_points'])
 
 #++++++++++++++++++++++ FFT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if config_analysis['FFT'] == True:

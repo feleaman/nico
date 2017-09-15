@@ -8,6 +8,8 @@ from nptdms import TdmsObject
 # from tkinter import filedialog
 import scipy.io
 import sys
+import pickle
+
 
 def f_open_tdms(filename, channel):
 	if filename == 'Input':
@@ -80,3 +82,13 @@ def f_open_mat(filename, channel):
 	file = scipy.io.loadmat(filename)
 	data = file[channel]
 	return data
+
+def save_pickle(pickle_name, pickle_data):
+	pik = open(pickle_name, 'wb')
+	pickle.dump(pickle_data, pik)
+	pik.close()
+
+def read_pickle(pickle_name):
+	pik = open(pickle_name, 'rb')
+	pickle_data = pickle.load(pik)
+	return pickle_data

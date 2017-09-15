@@ -69,47 +69,7 @@ def read_pickle(pickle_name):
 	pickle_data = pickle.load(pik)
 	return pickle_data
 
-def n_per_intervals(data, interval, divisions):
-	data = sorted(data)
-	save = 0
-	values = np.zeros(divisions)
-	interval_length = (interval[1] - interval[0])/divisions
-	for i in range(divisions):		
-		cont = 0
-		for k in range(len(data)-save):
-			if (data[k+save] <= interval[0] + interval_length*(i+1)):
-				cont = cont + 1
-			else:
-				break
-		values[i] = cont
-		if cont != 0:
-			save = cont + save
-	if np.sum(values) != len(data):
-		print('error n per intervals')
-		sys.exit()
-	values = values.tolist()
-	return values
 
-def leftright_stats(window):
-	pos_max = np.argmax(window)
-	left_window = window[0:pos_max]
-	right_window = window[pos_max:]
-
-	if (len(left_window) != 0 and len(right_window) != 0):
-		values = [np.max(window), 
-		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-	elif (len(left_window) == 0 and len(right_window) != 0):
-		values = [np.max(window), 
-		0., 0., 0., 0., 0., 
-		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-	elif (len(left_window) != 0 and len(right_window) == 0):
-		values = [np.max(window), 
-		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-		0., 0., 0., 0., 0.]
-	else:
-		print('error lens windows left and right+++++++++++++++++++++')
-	return values
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 
 

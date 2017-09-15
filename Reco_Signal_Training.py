@@ -69,26 +69,7 @@ else:
 	print('Error fs assignment')
 	
 #+++++++++++++++++++++++++++FUNCTIONS++++++++++++++++++++++++++++++++++++++++++
-def leftright_stats(window):
-	pos_max = np.argmax(window)
-	left_window = window[0:pos_max]
-	right_window = window[pos_max:]
 
-	if (len(left_window) != 0 and len(right_window) != 0):
-		values = [np.max(window), 
-		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-	elif (len(left_window) == 0 and len(right_window) != 0):
-		values = [np.max(window), 
-		0., 0., 0., 0., 0., 
-		np.min(right_window), np.mean(right_window), np.std(right_window), stats.skew(np.array(right_window)), stats.kurtosis(np.array(right_window), fisher=True)]
-	elif (len(left_window) != 0 and len(right_window) == 0):
-		values = [np.max(window), 
-		np.min(left_window), np.mean(left_window), np.std(left_window), stats.skew(np.array(left_window)), stats.kurtosis(np.array(left_window), fisher=True), 
-		0., 0., 0., 0., 0.]
-	else:
-		print('error lens windows left and right+++++++++++++++++++++')
-	return values
 
 # def leftright_stats_quantils(window):
 	# pos_max = np.argmax(window)
@@ -112,37 +93,8 @@ def leftright_stats(window):
 	# return values
 
 
-def n_per_intervals(data, interval, divisions):
-	data = sorted(data)
-	save = 0
-	values = np.zeros(divisions)
-	interval_length = (interval[1] - interval[0])/divisions
-	for i in range(divisions):		
-		cont = 0
-		for k in range(len(data)-save):
-			if (data[k+save] <= interval[0] + interval_length*(i+1)):
-				cont = cont + 1
-			else:
-				break
-		values[i] = cont
-		if cont != 0:
-			save = cont + save
-	if np.sum(values) != len(data):
-		print('error n per intervals')
-		sys.exit()
-	values = values.tolist()
-	return values
-	
 
-def save_pickle(pickle_name, pickle_data):
-	pik = open(pickle_name, 'wb')
-	pickle.dump(pickle_data, pik)
-	pik.close()
 
-def read_pickle(pickle_name):
-	pik = open(pickle_name, 'rb')
-	pickle_data = pickle.load(pik)
-	return pickle_data
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
@@ -176,9 +128,9 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-config_NNmodel = {'normalization': 'per_signal', 
-'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(300, 30),
-'random_state':1, 'activation':'tanh', 'tol':1.e-8, 'max_iter':200000}
+config_NNmodel = {'normalization': 'per_window', 
+'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(200, 20),
+'random_state':1, 'activation':'tanh', 'tol':1.e-5, 'max_iter':200000}
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 n_files = input('Number of files to use for training: ')
@@ -440,8 +392,10 @@ for x, classification, n_windows in zip(Signals, Classifications_per_file, Windo
 				current_window = current_window / np.max(np.absolute(current_window))	
 				
 			basic_stats_sides = leftright_stats(current_window)			
-			points_intervals = n_per_intervals(current_window, [-1., 1.], 5)			
-			values = basic_stats_sides + points_intervals			
+			points_intervals = n_per_10intervals_left_right(current_window, [-1., 1.])
+			
+			values = basic_stats_sides + points_intervals
+			values = np.array(values)
 			features.append(values)
 			
 		else:
@@ -454,7 +408,8 @@ for x, classification, n_windows in zip(Signals, Classifications_per_file, Windo
 			
 			
 			basic_stats_sides = leftright_stats(current_window)			
-			points_intervals = n_per_intervals(current_window, [-1., 1.], 5)			
+			points_intervals = n_per_10intervals_left_right(current_window, [-1., 1.])
+			
 			values = basic_stats_sides + points_intervals			
 			features.append(values)
 
@@ -515,6 +470,8 @@ max_iter=config_NNmodel['max_iter'])
 # print(type(features[0]))
 # print(len(features))
 # print(len(master_classification))
+print(len(features))
+print(len(features[0]))
 
 clf.fit(features, master_classification)
 
