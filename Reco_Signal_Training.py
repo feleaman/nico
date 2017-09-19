@@ -29,7 +29,7 @@ from os.path import isfile, join
 import pickle
 import argparse
 from sklearn.neural_network import MLPClassifier
-
+from sklearn.preprocessing import StandardScaler  
 import datetime
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
@@ -128,9 +128,9 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
 
-config_NNmodel = {'normalization': 'per_window', 
-'solver':'lbfgs', 'alpha':1e-5, 'hidden_layer_sizes':(200, 20),
-'random_state':1, 'activation':'tanh', 'tol':1.e-5, 'max_iter':200000}
+config_NNmodel = {'normalization': 'per_signal', 
+'solver':'lbfgs', 'alpha':1e-3, 'hidden_layer_sizes':(300, 30),
+'random_state':1, 'activation':'logistic', 'tol':1.e-6, 'max_iter':200000}
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
 n_files = input('Number of files to use for training: ')
@@ -391,10 +391,10 @@ for x, classification, n_windows in zip(Signals, Classifications_per_file, Windo
 				print('normalization per window')
 				current_window = current_window / np.max(np.absolute(current_window))	
 				
-			basic_stats_sides = leftright_stats(current_window)			
-			points_intervals = n_per_10intervals_left_right(current_window, [-1., 1.])
+			basic_stats_sides = interval10_stats_nomean(current_window)			
+			# points_intervals = n_per_intervals_left_right(current_window, [-1., 1.], 5)
 			
-			values = basic_stats_sides + points_intervals
+			values = basic_stats_sides
 			values = np.array(values)
 			features.append(values)
 			
@@ -407,10 +407,10 @@ for x, classification, n_windows in zip(Signals, Classifications_per_file, Windo
 				print('normalization per window')
 			
 			
-			basic_stats_sides = leftright_stats(current_window)			
-			points_intervals = n_per_10intervals_left_right(current_window, [-1., 1.])
+			basic_stats_sides = interval10_stats_nomean(current_window)			
+			# points_intervals = n_per_intervals_left_right(current_window, [-1., 1.], 5)
 			
-			values = basic_stats_sides + points_intervals			
+			values = basic_stats_sides		
 			features.append(values)
 
 		master_classification.append(classification[count])
@@ -429,6 +429,19 @@ clf = MLPClassifier(solver=config_NNmodel['solver'], alpha=config_NNmodel['alpha
 hidden_layer_sizes=config_NNmodel['hidden_layer_sizes'], random_state=config_NNmodel['random_state'],
 activation=config_NNmodel['activation'], tol=config_NNmodel['tol'], verbose=True,
 max_iter=config_NNmodel['max_iter'])
+
+
+
+#Scale
+scaler = StandardScaler()
+scaler.fit(features)
+features = scaler.transform(features)
+
+
+
+
+
+
 
 # 
 # # 
@@ -481,6 +494,11 @@ clf_pickle_info = [config_NNmodel, clf]
 stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 save_pickle('clf_' + stamp + '_' + '.pkl', clf_pickle_info)
 
+
+# Save pickle scale
+scale_pickle_info = [config_NNmodel, scaler]
+stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+save_pickle('scaler_' + stamp + '_' + '.pkl', scale_pickle_info)
 
 
 sys.exit()

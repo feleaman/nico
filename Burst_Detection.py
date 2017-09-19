@@ -10,7 +10,7 @@
 #++++++++++++++++++++++ IMPORT MODULES AND FUNCTIONS +++++++++++++++++++++++++++++++++++++++++++++
 import numpy as np
 import pickle
-
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
@@ -72,7 +72,7 @@ if extension == 'mat':
 
 elif extension == 'tdm': #tdms
 	x1 = f_open_tdms(filename1, channel)
-	x2 = f_open_tdms(filename1, channel)
+	x2 = f_open_tdms(filename2, channel)
 
 
 filename1 = os.path.basename(filename1) #changes from path to file
@@ -122,7 +122,23 @@ if Config_Methods['NeuronalNetwork'] == True:
 	plt.show()
 else:
 	clf = None
-config_neuronal = {'Model':clf, 'WindowTime':0.001, 'RateOverlap':0, 'normalization':'per_window'}
+config_neuronal = {'Model':clf, 'WindowTime':0.001, 'RateOverlap':0, 'normalization':'per_signal', 'feat_normalization':'standard'}
+if config_neuronal['feat_normalization'] == 'standard':
+	print('Select Scale:')
+	root = Tk()
+	root.withdraw()
+	root.update()
+	path_info_scale = filedialog.askopenfilename()
+	info_scale = read_pickle(path_info_scale)
+	print('Info scale: ')
+	print(info_scale)
+	root.destroy()
+	scaler = info_scale[1]
+	config_scale = info_scale[0]
+	plt.show()
+else:
+	scaler = 0
+
 
 #Pre-processing
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}
@@ -213,13 +229,13 @@ if (config_demod['warm_points'] != 0 and config_demod['mode'] == 'butter' and co
 
 
 #++++++++++++++++++++++ BURST DETECTION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-cont = 0
+perro = 0
 for element in Config_Methods:
 	if Config_Methods[element] == True:
-		cont = cont + 1
+		perro = perro + 1
 		Name = element
 		Method = element
-if cont != 1:
+if perro != 1:
 	print('One method and only one method must be selected')
 	sys.exit()
 
@@ -271,33 +287,46 @@ if Config_Methods[Method] == True:
 				Windows1.append(x1[count*window_points:(count+1)*window_points])
 				Windows2.append(x2[count*window_points:(count+1)*window_points])
 		
-		
 		Predictions1 = []
 		Predictions2 = []
 		features_fault = []
 		features_ok = []
+		numero = 0
 		for window1, window2 in zip(Windows1, Windows2):
 			if config_neuronal['normalization'] == 'per_window':
 				print('Normalization per window')
 				window1 = window1 / np.max(np.absolute(window1))
 				window2 = window2 / np.max(np.absolute(window2))
 			
-			basic_stats_sides = leftright_stats(window1)
-			points_intervals = n_per_10intervals_left_right(window1, [-1., 1.])
+			basic_stats_sides = interval10_stats_nomean(window1)
+			# points_intervals = n_per_intervals_left_right(window1, [-1., 1.], 5)
+			values = basic_stats_sides
 			
-			values = basic_stats_sides + points_intervals
+			values = scaler.transform(values)
+			
 			features_fault.append(values)
 			prediction = clf.predict(values)
+			
+			# if numero == 3:
+				# print(values)
+				# print(prediction)
+				# plt.plot(window1)
+				# plt.show()
+				# sys.exit()
+			
+			
 			Predictions1.append(prediction[0])
 		
-			basic_stats_sides = leftright_stats(window2)
-			points_intervals = n_per_10intervals_left_right(window2, [-1., 1.])
+			basic_stats_sides = interval10_stats_nomean(window2)
+			# points_intervals = n_per_intervals_left_right(window2, [-1., 1.], 5)
 			
-			values = basic_stats_sides + points_intervals
+			values = basic_stats_sides
+			values = scaler.transform(values)
+			
 			features_ok.append(values)
 			prediction = clf.predict(values)
 			Predictions2.append(prediction[0])
-			
+			numero = numero + 1
 			
 		t_burst_corr1 = []
 		amp_burst_corr1 = []
@@ -371,5 +400,5 @@ print(len(t_burst_corr2))
 
 plt.show()
 
-# np.savetxt('features_fault.txt', features_fault)
-# np.savetxt('features_ok.txt', features_ok)
+np.savetxt('features_fault.txt', features_fault)
+np.savetxt('features_ok.txt', features_ok)
