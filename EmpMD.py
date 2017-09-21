@@ -9,8 +9,8 @@ import scipy.io
 import argparse
 
 Inputs = ['path', 'file_x', 'channel', 'power2', 'save']
-Inputs_opt = ['file_h1', 'min_iter', 'max_iter', 's_number', 'tolerance']
-Defaults = [None, 100, 40000, 2, 2]
+Inputs_opt = ['file_h1', 'min_iter', 'max_iter', 's_number', 'tolerance', 'file_h2']
+Defaults = [None, 100, 40000, 2, 2, None]
 
 def main(argv):
 	config_input = read_parser(argv, Inputs, Inputs_opt, Defaults)
@@ -26,6 +26,7 @@ def main(argv):
 	max_iter = int(config_input['max_iter'])
 	s_number = int(config_input['s_number'])
 	tolerance = int(config_input['tolerance'])
+	file_h2 = config_input['file_h2']
 
 	filepath_x = join(path, file_x)
 	x = f_open_mat(filepath_x, channel)
@@ -33,13 +34,23 @@ def main(argv):
 	n_points = 2**int(power2)
 	x = x[0:n_points]
 	
-	if file_h1 != None:
+	if file_h1 != None and file_h2 == None:
 		print('To calculate: h2')
+		name_out = 'h2_'
 		filepath_h1 = join(path, file_h1)
 		h1 = np.loadtxt(filepath_h1)
 		x = x - h1
+	elif file_h1 != None and file_h2 != None:
+		print('To calculate: h3')
+		name_out = 'h3_'
+		filepath_h1 = join(path, file_h1)
+		h1 = np.loadtxt(filepath_h1)
+		filepath_h2 = join(path, file_h2)
+		h2 = np.loadtxt(filepath_h2)
+		x = x - h1 - h2
 	else:
 		print('To calculate: h1')
+		name_out = 'h1_'
 		
 	print('Fs = 1 MHz for AE')
 	fs = 1000000.0
@@ -52,11 +63,7 @@ def main(argv):
 	
 	if save == 'ON':
 		print('Saving...')
-		if file_h1 != None:
-			np.savetxt('h2_' + file_x[:-4] + '.txt', h1)
-		else:
-			np.savetxt('h1_' + file_x[:-4] + '.txt', h1)
-
+		np.savetxt(name_out + file_x[:-4] + '.txt', h1)
 
 	print("--- %s seconds ---" % (time.time() - start_time))
 	sys.exit()

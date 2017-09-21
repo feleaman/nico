@@ -124,17 +124,17 @@ else:
 	clf = None
 config_neuronal = {'Model':clf, 'WindowTime':0.001, 'RateOverlap':0, 'normalization':'per_signal', 'feat_normalization':'standard'}
 if config_neuronal['feat_normalization'] == 'standard':
-	print('Select Scale:')
-	root = Tk()
-	root.withdraw()
-	root.update()
-	path_info_scale = filedialog.askopenfilename()
-	info_scale = read_pickle(path_info_scale)
-	print('Info scale: ')
-	print(info_scale)
-	root.destroy()
-	scaler = info_scale[1]
-	config_scale = info_scale[0]
+	print('Standard Scale:')
+	# root = Tk()
+	# root.withdraw()
+	# root.update()
+	# path_info_scale = filedialog.askopenfilename()
+	# info_scale = read_pickle(path_info_scale)
+	# print('Info scale: ')
+	# print(info_scale)
+	# root.destroy()
+	scaler = info_model[2]
+	# config_scale = info_scale[0]
 	plt.show()
 else:
 	scaler = 0
@@ -154,8 +154,9 @@ config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [70.
 
 #++++++++++++++++++++++CHECKS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 if Config_Methods['NeuronalNetwork'] == True:
-
-	if config_model['normalization'] != config_neuronal['normalization']:
+	print(config_model['data_norm'])
+	print(config_neuronal['normalization'])
+	if config_model['data_norm'] != config_neuronal['normalization']:
 		print('error normalization model NN')
 		sys.exit()
 
@@ -298,7 +299,7 @@ if Config_Methods[Method] == True:
 				window1 = window1 / np.max(np.absolute(window1))
 				window2 = window2 / np.max(np.absolute(window2))
 			
-			basic_stats_sides = interval10_stats_nomean(window1)
+			basic_stats_sides = interval10_stats(window1)
 			# points_intervals = n_per_intervals_left_right(window1, [-1., 1.], 5)
 			values = basic_stats_sides
 			
@@ -317,7 +318,7 @@ if Config_Methods[Method] == True:
 			
 			Predictions1.append(prediction[0])
 		
-			basic_stats_sides = interval10_stats_nomean(window2)
+			basic_stats_sides = interval10_stats(window2)
 			# points_intervals = n_per_intervals_left_right(window2, [-1., 1.], 5)
 			
 			values = basic_stats_sides
@@ -331,14 +332,14 @@ if Config_Methods[Method] == True:
 		t_burst_corr1 = []
 		amp_burst_corr1 = []
 		for i in range(len(Predictions1)):
-			if Predictions1[i] != 0:
+			if Predictions1[i] == 1:
 				t_burst_corr1.append(i*window_time)
 				amp_burst_corr1.append(x1raw[int(i*window_time*fs)])
 			
 		t_burst_corr2 = []
 		amp_burst_corr2 = []
 		for i in range(len(Predictions2)):
-			if Predictions2[i] != 0:
+			if Predictions2[i] == 1:
 				t_burst_corr2.append(i*window_time)
 				amp_burst_corr2.append(x2raw[int(i*window_time*fs)])
 		

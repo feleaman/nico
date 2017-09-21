@@ -77,6 +77,8 @@ if extension == 'mat':
 elif extension == 'tdm': #tdms
 	x = f_open_tdms(filename, channel)
 
+elif extension == 'txt': #tdms
+	x = np.loadtxt(filename)
 filename = os.path.basename(filename) #changes from path to file
 
 
