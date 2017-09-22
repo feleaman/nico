@@ -1,5 +1,5 @@
 # Signal_Window_Classification.py
-# Last updated: 24.08.2017 by Felix Leaman
+# Last updated: 22.09.2017 by Felix Leaman
 # Description:
 # 
 
@@ -181,6 +181,19 @@ def Negative():
 		print("Negative")
 		plt.close()
 		Quit()
+
+def ALL_Negative():
+	global count
+	global classification
+	print("ALL Negative")
+	count = count + 1
+	print('Window N ', count)
+	for k in range(n_windows):
+		classification.append(0)
+	plt.close()
+	# print("ALL Negative")
+	plt.close()
+	Quit()
 
 def Discard():
 	global count
@@ -451,7 +464,7 @@ root.title('canv')
 root.config(bg="white")
 w,h=root.maxsize()
 print("%dx%d"%(w,h))
-root.geometry("%dx%d"%(1150,150))
+root.geometry("%dx%d"%(1450,150))
 
 # Button Positive
 botonn=Button(root,text="Positive",font=('arial', 22, 'bold'),command=Positive)
@@ -501,6 +514,12 @@ botonn=Button(root,text="StartOld",font=('arial', 22, 'bold'),command=StartOld)
 botonn['bg']='magenta'
 botonn['fg']='black'
 botonn.place(x=960,y=40)
+
+# Button ALL Negative and Quit
+botonn=Button(root,text="ALLNegative",font=('arial', 22, 'bold'),command=ALL_Negative)
+botonn['bg']='yellow'
+botonn['fg']='red'
+botonn.place(x=1160,y=40)
 
 root.mainloop()
 

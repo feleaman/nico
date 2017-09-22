@@ -9,8 +9,8 @@ import scipy.io
 import argparse
 
 Inputs = ['path', 'file_x', 'channel', 'power2', 'save']
-Inputs_opt = ['file_h1', 'min_iter', 'max_iter', 's_number', 'tolerance', 'file_h2']
-Defaults = [None, 100, 40000, 2, 2, None]
+Inputs_opt = ['file_h1', 'min_iter', 'max_iter', 's_number', 'tolerance', 'file_h2', 'file_h3']
+Defaults = [None, 100, 40000, 2, 2, None, None]
 
 def main(argv):
 	config_input = read_parser(argv, Inputs, Inputs_opt, Defaults)
@@ -27,6 +27,7 @@ def main(argv):
 	s_number = int(config_input['s_number'])
 	tolerance = int(config_input['tolerance'])
 	file_h2 = config_input['file_h2']
+	file_h3 = config_input['file_h3']
 
 	filepath_x = join(path, file_x)
 	x = f_open_mat(filepath_x, channel)
@@ -40,7 +41,7 @@ def main(argv):
 		filepath_h1 = join(path, file_h1)
 		h1 = np.loadtxt(filepath_h1)
 		x = x - h1
-	elif file_h1 != None and file_h2 != None:
+	elif file_h1 != None and file_h2 != None and file_h3 == None:
 		print('To calculate: h3')
 		name_out = 'h3_'
 		filepath_h1 = join(path, file_h1)
@@ -48,6 +49,16 @@ def main(argv):
 		filepath_h2 = join(path, file_h2)
 		h2 = np.loadtxt(filepath_h2)
 		x = x - h1 - h2
+	elif file_h1 != None and file_h2 != None and file_h3 != None:
+		print('To calculate: h4')
+		name_out = 'h4_'
+		filepath_h1 = join(path, file_h1)
+		h1 = np.loadtxt(filepath_h1)
+		filepath_h2 = join(path, file_h2)
+		h2 = np.loadtxt(filepath_h2)
+		filepath_h3 = join(path, file_h3)
+		h3 = np.loadtxt(filepath_h3)
+		x = x - h1 - h2 - h3
 	else:
 		print('To calculate: h1')
 		name_out = 'h1_'

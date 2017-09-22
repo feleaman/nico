@@ -165,6 +165,8 @@ def main(argv):
 					values = interval10_stats_nomean(current_window)
 				elif config['features'] == 'interval10_stats':
 					values = interval10_stats(current_window)
+				elif config['features'] == 'interval5_stats_nomean':
+					values = interval5_stats_nomean(current_window)
 				else:
 					print('error name features')
 					sys.exit()
@@ -187,6 +189,8 @@ def main(argv):
 					values = interval10_stats_nomean(current_window)
 				elif config['features'] == 'interval10_stats':
 					values = interval10_stats(current_window)
+				elif config['features'] == 'interval5_stats_nomean':
+					values = interval5_stats_nomean(current_window)
 				else:
 					print('error name features')
 					sys.exit()

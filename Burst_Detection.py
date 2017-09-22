@@ -33,11 +33,17 @@ plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
+Inputs = ['channel', 'power2', 'method']
+Inputs_opt = ['thr_mode', 'thr_value', 'window_length', 'overlap', 'data_norm', 'feat_norm', 'demod', 'prefilter', 'postfilter', 'rectification', 'dc_value', 'warm_points', 'diff_points', '']
+Defaults = [None, 100, 40000, 2, 2, None, None]
+
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--channel', nargs='?')
 parser.add_argument('--power2', nargs='?')
-parser.add_argument('--showplot', nargs='?')
-parser.add_argument('--type', nargs='?')
+# parser.add_argument('--showplot', nargs='?')
+# parser.add_argument('--type', nargs='?')
 args = parser.parse_args()
 
 if args.channel != None:
@@ -106,6 +112,30 @@ traw = t
 #Methods
 Config_Methods = {'Threshold_WFM':False, 'NeuronalNetwork':True}
 config_threshold_wfm = {'mode':'fixed_value', 'value':0.3, 'min_t_burst':0.001}
+clf_check = True
+
+if clf_check == True:
+	print('Select Classifications file in order')
+	root = Tk()
+	root.withdraw()
+	root.update()
+	clf_file1 = filedialog.askopenfilename()
+	clf_file2 = filedialog.askopenfilename()
+	root.destroy()
+	clf_pickle1 = read_pickle(clf_file1)
+	clf_pickle2 = read_pickle(clf_file2)
+	clf_1 = clf_pickle1['classification']
+	clf_2 = clf_pickle2['classification']
+	# if clf_pickle1['config_analysis']['WindowTime'] != config_neuronal['WindowTime']:
+		# print('error window time')
+		# sys.exit()
+	if clf_pickle1['filename'] != filename1:
+		print('error filename 1')
+		sys.exit()
+	if clf_pickle2['filename'] != filename2:
+		print('error filename 2')
+		sys.exit()
+	
 
 if Config_Methods['NeuronalNetwork'] == True:
 	print('Select NN Model:')
@@ -123,6 +153,7 @@ if Config_Methods['NeuronalNetwork'] == True:
 else:
 	clf = None
 config_neuronal = {'Model':clf, 'WindowTime':0.001, 'RateOverlap':0, 'normalization':'per_signal', 'feat_normalization':'standard'}
+
 if config_neuronal['feat_normalization'] == 'standard':
 	print('Standard Scale:')
 	# root = Tk()
@@ -138,6 +169,8 @@ if config_neuronal['feat_normalization'] == 'standard':
 	plt.show()
 else:
 	scaler = 0
+
+
 
 
 #Pre-processing
@@ -240,6 +273,19 @@ if perro != 1:
 	print('One method and only one method must be selected')
 	sys.exit()
 
+POS_1 = 0
+NEG_1 = 0
+FP_1 = 0
+VP_1 = 0
+VN_1 = 0
+FN_1 = 0
+
+POS_2 = 0
+NEG_2 = 0
+FP_2 = 0
+VP_2 = 0
+VN_2 = 0
+FN_2 = 0
 if Config_Methods[Method] == True:
 	if Method == 'Threshold_WFM':	
 		if config_threshold_wfm['mode'] == 'factor_rms':
@@ -299,7 +345,7 @@ if Config_Methods[Method] == True:
 				window1 = window1 / np.max(np.absolute(window1))
 				window2 = window2 / np.max(np.absolute(window2))
 			
-			basic_stats_sides = interval10_stats(window1)
+			basic_stats_sides = interval5_stats_nomean(window1)
 			# points_intervals = n_per_intervals_left_right(window1, [-1., 1.], 5)
 			values = basic_stats_sides
 			
@@ -307,6 +353,29 @@ if Config_Methods[Method] == True:
 			
 			features_fault.append(values)
 			prediction = clf.predict(values)
+			# print(prediction[0])
+			# print(clf_1[count])
+			
+			if prediction[0] == 2:
+				prediction[0] = 0
+			if clf_1[numero] == 2:
+				clf_1[numero] = 0
+			
+			if clf_1[numero] == 0:
+				NEG_1 = NEG_1 + 1
+				if prediction[0] == clf_1[numero]:
+					VN_1 = VN_1 + 1
+				else:
+					FN_1 = FN_1 + 1
+			elif clf_1[numero] == 1:
+				POS_1 = POS_1 + 1
+				if prediction[0] == clf_1[numero]:
+					VP_1 = VP_1 + 1
+				else:
+					FP_1 = FP_1 + 1
+			# print(prediction[0])
+			# print(clf_1[count])
+			# sys.exit()
 			
 			# if numero == 3:
 				# print(values)
@@ -318,7 +387,7 @@ if Config_Methods[Method] == True:
 			
 			Predictions1.append(prediction[0])
 		
-			basic_stats_sides = interval10_stats(window2)
+			basic_stats_sides = interval5_stats_nomean(window2)
 			# points_intervals = n_per_intervals_left_right(window2, [-1., 1.], 5)
 			
 			values = basic_stats_sides
@@ -326,6 +395,26 @@ if Config_Methods[Method] == True:
 			
 			features_ok.append(values)
 			prediction = clf.predict(values)
+			if prediction[0] == 2:
+				prediction[0] = 0
+			if clf_2[numero] == 2:
+				clf_2[numero] = 0
+			
+			
+			if clf_2[numero] == 0:
+				NEG_2 = NEG_2 + 1
+				if prediction[0] == clf_2[numero]:
+					VN_2 = VN_2 + 1
+				else:
+					FN_2 = FN_2 + 1
+			elif clf_2[numero] == 1:
+				if prediction[0] == clf_2[numero]:
+					VP_2 = VP_2 + 1
+				else:
+					FP_2 = FP_2 + 1
+			
+			
+			
 			Predictions2.append(prediction[0])
 			numero = numero + 1
 			
@@ -397,6 +486,48 @@ ax[1].set_xlabel('Time s')
 print('Detected Burst')
 print(len(t_burst_corr1))
 print(len(t_burst_corr2))
+print('++INFO')
+print('+++++++Signal 1: Fault')
+print('Negatives: ', NEG_1)
+print('Positives: ', POS_1)
+print('False Positives: ', FP_1)
+print('True Positives: ', VP_1)
+print('False Negatives: ', FN_1)
+print('True Negatives: ', VN_1)
+ACCU_1 = (VN_1+VP_1)/(NEG_1+POS_1)
+RECALL_1 = VP_1 / POS_1
+FPR_1 = 1 - (VN_1 / NEG_1)
+
+print('Accuracy: ', ACCU_1)
+print('Recall: ', RECALL_1)
+print('FPR: ', FPR_1)
+
+
+
+
+
+
+
+print('++++++++Signal 2: OK')
+print('Negatives: ', NEG_2)
+print('Positives: ', POS_2)
+print('False Positives: ', FP_2)
+print('True Positives: ', VP_2)
+print('False Negatives: ', FN_2)
+print('True Negatives: ', VN_2)
+
+ACCU_2 = (VN_2+VP_2)/(NEG_2+POS_2)
+# RECALL_2 = VP_2 / POS_2
+FPR_2 = 1 - (VN_2 / NEG_2)
+
+print('Accuracy: ', ACCU_2)
+# print('Recall: ', RECALL_2)
+print('FPR: ', FPR_2)
+
+
+
+
+
 
 
 plt.show()
