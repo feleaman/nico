@@ -1,5 +1,5 @@
 # Signal_Window_Classification.py
-# Last updated: 22.09.2017 by Felix Leaman
+# Last updated: 23.09.2017 by Felix Leaman
 # Description:
 # 
 
@@ -342,7 +342,12 @@ if extension == 'mat':
 elif extension == 'tdm': #tdms
 	x1 = f_open_tdms(filename1, channel)
 
-
+elif extension == 'txt':
+	x1 = np.loadtxt(filename1)
+	
+else:
+	print('Error extension')
+	sys.exit()
 filename1 = os.path.basename(filename1) #changes from path to file
 
 #++++++++++++++++++++++ SAMPLING +++++++++++++++++++++++++++++++++++++++++++++++++++++++

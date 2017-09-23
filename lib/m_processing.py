@@ -5,7 +5,7 @@ from scipy import stats
 import scipy
 import math
 
-from nico.m_fft import *
+from m_fft import *
 
 
 def xcorrelation_sum(array1, array2, point):#

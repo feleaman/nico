@@ -9,6 +9,7 @@ from nptdms import TdmsObject
 import scipy.io
 import sys
 import pickle
+import numpy as np
 
 
 def f_open_tdms(filename, channel):
@@ -92,3 +93,18 @@ def read_pickle(pickle_name):
 	pik = open(pickle_name, 'rb')
 	pickle_data = pickle.load(pik)
 	return pickle_data
+
+def load_signal(filename):
+	point_index = filename.find('.')
+	extension = filename[point_index+1] + filename[point_index+2] + filename[point_index+3]
+	if extension == 'mat':
+		x = f_open_mat(filename, channel)
+		x = np.ndarray.flatten(x)
+	elif extension == 'tdm': #tdms
+		x = f_open_tdms(filename, channel)
+	elif extension == 'txt':
+		x = np.loadtxt(filename)
+	else:
+		print('Error extention')
+		sys.exit()
+	return x

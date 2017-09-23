@@ -4,7 +4,7 @@ from scipy import signal
 from scipy import stats
 import scipy
 import math
-from nico.m_fft import *
+from m_fft import *
 
 
 def fourier_filter(x, fs, type, freqs):
