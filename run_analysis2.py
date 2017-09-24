@@ -5,10 +5,10 @@ import os
 os.system('cd C:\code\nico')
 # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --layers 25 --classifications C:/code/nico1/classification_20170923_061144_ok_v3_n1500_m80.pkl --files C:/code/nico1/ok_v3_n1500_m80.txt --features interval10_stats_nomean')
 
-os.system('python Burst_Detection.py --channel AE_Signal --power2 20 --method NN --clf_files C:\\code\\nico1\\classification_20170923_061144_ok_v3_n1500_m80.pkl C:\\code\\nico1\\classification_20170923_061144_ok_v3_n1500_m80.pkl --NN_model C:\\code\\nico1\\clf_20170923_104347_.pkl --data_norm per_signal')
+os.system('python Burst_Detection1.py --channel AE_Signal --fs 1.e6 --power2 20 --method NN --clf_files C:\\code\\nico1\\classification_20170923_061144_ok_v3_n1500_m80.pkl --NN_model C:\\code\\nico1\\clf_20170923_104347_.pkl --data_norm per_signal --n_files 2 --files C:\\code\\nico1\\ok_v3_n1500_m80.txt C:\\code\\nico1\\defect_v3_n1500_m80.txt')
 
 
-
+# os.system('python Burst_Detection1.py --channel AE_Signal --fs 1.e6 --power2 20 --method THR --clf_files C:\\code\\nico1\\classification_20170923_061144_ok_v3_n1500_m80.pkl --NN_model C:\\code\\nico1\\clf_20170923_104347_.pkl --data_norm per_signal --n_files 2')
 
 
 
