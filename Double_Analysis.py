@@ -125,6 +125,10 @@ ax[1].set_ylabel('Amplitude')
 ax[1].set_xlabel('Time s')
 
 
+# print(signal_rms(x1))
+# print(signal_rms(x2))
+# sys.exit()
+
 #Filter
 if config_filter['analysis'] == True:
 	print('+++Filter:')
@@ -261,11 +265,13 @@ for element in config_analysis:
 		if element == 'WFM':
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
 			ax[0].plot(t, x1)
-			ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+			ax[0].set_title('Faulty Train Signal: 1500RPM / 80% Load', fontsize=10)
 			ax[0].set_ylabel('Amplitude')
 
 			ax[1].plot(t, x2)
-			ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			ax[1].set_title('Healthy Train Signal: 1500RPM / 80% Load', fontsize=10)
 			ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Time s')
 

@@ -94,7 +94,7 @@ def read_pickle(pickle_name):
 	pickle_data = pickle.load(pik)
 	return pickle_data
 
-def load_signal(filename):
+def load_signal(filename, channel=None):
 	point_index = filename.find('.')
 	extension = filename[point_index+1] + filename[point_index+2] + filename[point_index+3]
 	if extension == 'mat':

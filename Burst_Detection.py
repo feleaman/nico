@@ -1,5 +1,5 @@
 # Burst_Detection.py
-# Last updated: 24.09.2017 by Felix Leaman
+# Last updated: 25.09.2017 by Felix Leaman
 # Description:
 # Code for opening N data files with single channel and detecting Bursts
 # Channel must be 'AE_Signal', 'Koerperschall', or 'Drehmoment'. Defaults sampling rates are 1000kHz, 1kHz and 1kHz, respectively
@@ -35,7 +35,7 @@ Inputs = ['channel', 'fs', 'power2', 'method', 'n_files']
 Opt_Input = {'files':None, 'window_time':0.001, 'overlap':0, 'data_norm':None, 'clf_files':None, 'clf_check':'OFF'}
 Opt_Input_thr = {'thr_mode':'factor_rms', 'thr_value':1}
 Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':100, 'diff_points':1}
-Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard'}
+Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard', 'class2':0}
 Opt_Input.update(Opt_Input_thr)
 Opt_Input.update(Opt_Input_cant)
 Opt_Input.update(Opt_Input_nn)
@@ -44,11 +44,14 @@ Opt_Input.update(Opt_Input_nn)
 
 def main(argv):
 	config = read_parser(argv, Inputs, Opt_Input)
+
 	X = [[] for j in range(config['n_files'])]
 	XRAW = [[] for j in range(config['n_files'])]
 	T_Burst = [[] for j in range(config['n_files'])]
 	A_Burst = [[] for j in range(config['n_files'])]
 	ARAW_Burst = [[] for j in range(config['n_files'])]
+	Results = [[] for j in range(config['n_files'])]
+	CLFs = [[] for j in range(config['n_files'])]
 	
 	for k in range(config['n_files']):		
 		if config['files'] == None:
@@ -60,7 +63,7 @@ def main(argv):
 		else:
 			filename1 = config['files'][k]
 
-		x1raw = load_signal(filename1)
+		x1raw = load_signal(filename1, channel=config['channel'])
 		
 		if config['power2'] == None:
 			n_points = 2**(max_2power(len(x1)))
@@ -76,58 +79,35 @@ def main(argv):
 		filename1 = os.path.basename(filename1) #changes from path to file
 		config['filename'] = filename1
 		
-		x1, t_burst_corr1, amp_burst_corr1 = burst_detector(x1raw, config)
+		x1, t_burst_corr1, amp_burst_corr1, results, clf_1 = burst_detector(x1raw, config, count=k)
 		X[k] = x1
 		XRAW[k] = x1raw		
 		T_Burst[k] = t_burst_corr1
 		A_Burst[k] = amp_burst_corr1
 		ARAW_Burst[k] = np.array([x1raw[int(time*config['fs'])] for time in t_burst_corr1])
-		
+		Results[k] = results
+		CLFs[k] = clf_1
 	Name = config['method']
+	print('Detected Burst')
 	fig = [[], []]	
 	fig[0], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
 	for i in range(config['n_files']):
-		plot_burst(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True)	
+		print(len(T_Burst[i]))
+		plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True)	
 
 	#++++++++++++++++++++++ BURSTS BACK IN RAW SIGNALS ++++++++
 	fig[1], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
 	for i in range(config['n_files']):
-		plot_burst(fig[1], ax, i, traw, XRAW[i], config, T_Burst[i], ARAW_Burst[i], name='RAW', color='darkblue')	
+		print(Results[i])
+		# clf_pickle1 = read_pickle(config['clf_files'][i])
+		# clf_1 = clf_pickle1['classification']
+		plot_burst(fig[1], ax, i, traw, XRAW[i], config, T_Burst[i], ARAW_Burst[i], name='RAW', color='darkblue', clf=CLFs[i])	
+
 	plt.show()
-	
-	
-	# print('Detected Burst')
-	# print(len(t_burst_corr1))
-	# print(len(t_burst_corr2))
-	# print('++INFO')
-	# print('+++++++Signal 1: Fault')
-	# print('Negatives: ', NEG_1)
-	# print('Positives: ', POS_1)
-	# print('False Positives: ', FP_1)
-	# print('True Positives: ', VP_1)
-	# print('False Negatives: ', FN_1)
-	# print('True Negatives: ', VN_1)
-	# if NEG_1+POS_1 != 0:
-		# ACCU_1 = (VN_1+VP_1)/(NEG_1+POS_1)
-	# else:
-		# ACCU_1 = 0
-	# if POS_1 != 0:
-		# RECALL_1 = VP_1 / POS_1
-	# else:
-		# RECALL_1 = 0
-	# if NEG_1 != 0:
-		# FPR_1 = 1 - (VN_1 / NEG_1)
-	# else:
-		# FPR_1 = 0
-
-	# print('Accuracy: ', ACCU_1)
-	# print('Recall: ', RECALL_1)
-	# print('FPR: ', FPR_1)
-
 	return
 
 
-def burst_detector(x1, config):
+def burst_detector(x1, config, count=None):
 	dt = 1.0/config['fs']
 	n_points = len(x1)
 	tr = n_points*dt
@@ -145,13 +125,15 @@ def burst_detector(x1, config):
 			root.destroy()
 		else:
 		# print(config['clf_files'][0])
-			clf_pickle1 = read_pickle(config['clf_files'][0])
+			clf_pickle1 = read_pickle(config['clf_files'][count])
 		# print(clf_pickle1)
 		# sys.exit()
 		clf_1 = clf_pickle1['classification']
 		# if clf_pickle1['config_analysis']['WindowTime'] != config_neuronal['WindowTime']:
 			# print('error window time')
 			# sys.exit()
+		print(clf_pickle1['filename'])
+		print(config['filename'])
 		if clf_pickle1['filename'] != config['filename']:
 			print('error filename 1')
 			sys.exit()
@@ -269,27 +251,63 @@ def burst_detector(x1, config):
 
 
 	#++++++++++++++++++++++ BURST DETECTION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	
-	POS_1 = 0
-	NEG_1 = 0
-	FP_1 = 0
-	VP_1 = 0
-	VN_1 = 0
-	FN_1 = 0
+	Results = {'POS':0, 'NEG':0, 'FP':0, 'TP':0, 'TN':0, 'FN':0}
 
 	if config['method'] != None:
 		if config['method'] == 'THR':
+		
+			if config['data_norm'] == 'per_signal':
+				x1 = x1 / np.max(np.absolute(x1))
+				print('Normalization per signal')
+			elif config['data_norm'] == 'per_rms':
+				x1 = x1 / signal_rms(x1)
+				print('Normalization per rms')
+		
+		
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
 			
-			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=config['fs'], threshold=threshold1, t_window=config['window_time'])			
+			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=config['fs'], threshold=threshold1, t_window=config['window_time'])
 			
+			tWindows = []
+			window_points = int(config['window_time']*config['fs'])
+			n_windows = int(n_points/window_points)
+			for count in range(n_windows):
+				tWindows.append(t[count*window_points:(count+1)*window_points])
+			count = 0
+			for twindow in tWindows:
+				flag = 'OFF'
+				if clf_1[count] == 2:
+					clf_1[count] = config['class2']
+				if clf_1[count] == 0:
+					Results['NEG'] = Results['NEG'] + 1
+					for time_burst in t_burst_corr1:
+						if time_burst in twindow:
+							# print('++++++++++++FP in ', count*config['window_time'])
+							Results['FP'] = Results['FP'] + 1
+							flag = 'ON'
+					if flag == 'OFF':
+						Results['TN'] = Results['TN'] + 1
+				elif clf_1[count] == 1:
+					Results['POS'] = Results['POS'] + 1
+					for time_burst in t_burst_corr1:
+						if time_burst in twindow:
+							Results['TP'] = Results['TP'] + 1
+							flag = 'ON'
+					if flag == 'OFF':
+						Results['FN'] = Results['FN'] + 1
+				else:
+					print('error file clf')
+					sys.exit()
+				count = count + 1
+
 			# t_burst_corr1 = t_burst_corr1 + np.ones(len(t_burst_corr1))*warm*dt
 		
 		elif config['method'] == 'NN':
 		
 			Windows1 = []
-			window_time = config['window_time']
-			window_points = int(window_time*config['fs'])
+			window_points = int(config['window_time']*config['fs'])
 			window_advance = int(window_points*config['overlap'])
 			if config['overlap'] != 0:
 				print('Windows with overlap')
@@ -317,35 +335,40 @@ def burst_detector(x1, config):
 					print('Normalization per window')
 					window1 = window1 / np.max(np.absolute(window1))
 				
-				basic_stats_sides = interval10_stats_nomean(window1)
+				if config['features'] == 'interval10_stats_nomean':
+					values = interval10_stats_nomean(window1)
+				elif config['features'] == 'interval5_stats_nomean':
+					values = interval5_stats_nomean(window1)
+				else:
+					print('error features')
+					sys.exit()
 				# points_intervals = n_per_intervals_left_right(window1, [-1., 1.], 5)
-				values = basic_stats_sides
+				# values = basic_stats_sides
 				
 				values = scaler.transform(values)
 				
 				features_fault.append(values)
 				prediction = clf.predict(values)
 				
-				# if prediction[0] == 2:
-					# prediction[0] = 0
-				# if clf_1[numero] == 2:
-					# clf_1[numero] = 0
+				if prediction[0] == 2:
+					prediction[0] = config['class2']
+				if clf_1[numero] == 2:
+					clf_1[numero] = config['class2']
 				
-				# if clf_1[numero] == 0:
-					# NEG_1 = NEG_1 + 1
-					# if prediction[0] == clf_1[numero]:
-						# VN_1 = VN_1 + 1
-					# else:
-						# FN_1 = FN_1 + 1
-				# elif clf_1[numero] == 1:
-					# POS_1 = POS_1 + 1
-					# if prediction[0] == clf_1[numero]:
-						# VP_1 = VP_1 + 1
-					# else:
-						# FP_1 = FP_1 + 1
+				if clf_1[numero] == 0:
+					Results['NEG'] = Results['NEG'] + 1
+					if prediction[0] == clf_1[numero]:
+						Results['TN'] = Results['TN'] + 1
+					else:
+						Results['FP'] = Results['FP'] + 1
+				elif clf_1[numero] == 1:
+					Results['POS'] = Results['POS'] + 1
+					if prediction[0] == clf_1[numero]:
+						Results['TP'] = Results['TP'] + 1
+					else:
+						Results['FN'] = Results['FN'] + 1
 
 				Predictions1.append(prediction[0])
-			
 
 				numero = numero + 1
 				
@@ -353,8 +376,8 @@ def burst_detector(x1, config):
 			amp_burst_corr1 = []
 			for i in range(len(Predictions1)):
 				if Predictions1[i] == 1:
-					t_burst_corr1.append(i*window_time)
-					amp_burst_corr1.append(x1raw[int(i*window_time*fs)])
+					t_burst_corr1.append(i*config['window_time'])
+					amp_burst_corr1.append(x1[int(i*config['window_time']*config['fs'])])
 
 	#++++++++++++++++++++++ PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	# if config_filter['analysis'] == True:
@@ -365,9 +388,20 @@ def burst_detector(x1, config):
 		# Name = Name + ' ENV'		
 	# if config_diff['analysis'] == True:
 		# Name = Name + ' DIF'
-
 	
-	return x1, t_burst_corr1, amp_burst_corr1
+	Results['Accu'] = 100. * (Results['TN'] + Results['TP']) / (Results['POS'] + Results['NEG'])
+	if Results['POS'] != 0:
+		Results['Recall'] = 100. * (Results['TP']) / (Results['POS'])
+	else:
+		Results['Recall'] = -1
+	if (Results['TP'] + Results['FP']) != 0:
+		Results['Precision'] = 100. * (Results['TP']) / (Results['TP'] + Results['FP'])
+	else:
+		Results['Precision'] = -1
+	Results['FScore'] = 2 * Results['Recall'] * Results['Precision'] / (Results['Recall'] + Results['Precision'])
+	Results['FPR'] = 100. * (Results['FP']) / (Results['NEG'])
+
+	return x1, t_burst_corr1, amp_burst_corr1, Results, clf_1
 
 
 def read_parser(argv, Inputs, InputsOpt_Defaults):
@@ -409,6 +443,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	config_input['power2'] = int(config_input['power2'])
 	config_input['warm_points'] = int(config_input['warm_points'])
 	config_input['diff_points'] = int(config_input['diff_points'])
+	config_input['class2'] = int(config_input['class2'])
 	
 	# Variable conversion
 	if config_input['prefilter'] != None:
@@ -419,13 +454,13 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 
 	return config_input
 
-def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None):
+def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None):
 	if name != None:
 		name = name + ' '
 	else:
 		name = ''
 	if color == None:
-		color = 'deepskyblue'
+		color = None
 	if config['n_files'] == 1:
 		ax = [ax]
 
@@ -437,11 +472,67 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		ax[nax].plot(t_burst_corr1, amp_burst_corr1, 'ro')
 	elif config['method'] == 'NN':
 		for i in range(len(t_burst_corr1)):
-			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='y', alpha=0.5)	
+			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='y', alpha=0.5)
+	if clf != None:
+		print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+		for k in range(len(clf)):
+			if clf[k] == 2:
+				print('error clf')
+				sys.exit()
+		ind_w_positives = [k for k in range(len(clf)) if clf[k] == 1]
+		print(len(ind_w_positives))
+		print(len(clf))
+		for i in range(len(ind_w_positives)):
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.5)
+		
+		
 	ax[nax].set_title(name + config['channel'] + ' ' + config['method'] + '\n' + config['filename'], fontsize=10)
 	ax[nax].set_ylabel('Amplitude')
 	return
 
+def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None):
+	if name != None:
+		name = name + ' '
+	else:
+		name = ''
+	if color == None:
+		color = None
+	if config['n_files'] == 1:
+		ax = [ax]
+
+	ax[nax].plot(t, x1, color=color)
+	if config['method'] == 'THR':
+		if thr == True:
+			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
+			ax[nax].axhline(threshold1, color='k')		
+		ax[nax].plot(t_burst_corr1, amp_burst_corr1, 'ro')
+	elif config['method'] == 'NN':
+		for i in range(len(t_burst_corr1)):
+			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='y', alpha=0.5)
+	if clf != None:
+		print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+		for k in range(len(clf)):
+			if clf[k] == 2:
+				print('error clf')
+				sys.exit()
+		ind_w_positives = [k for k in range(len(clf)) if clf[k] == 1]
+		print(len(ind_w_positives))
+		print(len(clf))
+		for i in range(len(ind_w_positives)):
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.5)
+		
+	if nax == 0:
+		name = 'Faulty Validation Signal: '
+	else:
+		name = 'Healthy Validation Signal: '
+	flag = config['filename'].find('1500')
+	if flag != -1:
+		name = name + '1500RPM / 80% Load'
+	else:
+		name = name + '1000RPM / 80% Load'
+	ax[nax].set_title(name, fontsize=10)
+	ax[nax].set_ylabel('Amplitude')
+	return
 
 def read_threshold(mode, value, x1=None):
 	if mode == 'factor_rms':
