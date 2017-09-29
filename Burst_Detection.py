@@ -26,16 +26,19 @@ from m_demodulation import *
 from m_denois import *
 from m_det_features import *
 from m_processing import *
+import io
 
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-Inputs = ['channel', 'fs', 'power2', 'method', 'n_files']
-Opt_Input = {'files':None, 'window_time':0.001, 'overlap':0, 'data_norm':None, 'clf_files':None, 'clf_check':'OFF'}
+Inputs = ['channel', 'fs', 'power2', 'method', 'n_files', 'save']
+Opt_Input = {'files':None, 'window_time':0.001, 'overlap':0, 'data_norm':None, 'clf_files':None, 'clf_check':'OFF', 'plot':'ON'}
+Opt_Input_analysis = {'EMD':'OFF', 'denois':'OFF', 'med_kernel':3, 'processing':'OFF'}
 Opt_Input_thr = {'thr_mode':'factor_rms', 'thr_value':1}
 Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':100, 'diff_points':1}
 Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard', 'class2':0}
+Opt_Input.update(Opt_Input_analysis)
 Opt_Input.update(Opt_Input_thr)
 Opt_Input.update(Opt_Input_cant)
 Opt_Input.update(Opt_Input_nn)
@@ -52,6 +55,7 @@ def main(argv):
 	ARAW_Burst = [[] for j in range(config['n_files'])]
 	Results = [[] for j in range(config['n_files'])]
 	CLFs = [[] for j in range(config['n_files'])]
+	Filenames = [[] for j in range(config['n_files'])]
 	
 	for k in range(config['n_files']):		
 		if config['files'] == None:
@@ -62,8 +66,16 @@ def main(argv):
 			root.destroy()
 		else:
 			filename1 = config['files'][k]
-
+		
+		if config['EMD'] == 'ON':
+			print('with MED component h1')
+			filename1raw = filename1
+			filename1 = filename1.replace(os.path.basename(filename1), 'h1_' + os.path.basename(filename1))
+			filename1 = filename1.replace('.mat', '.txt')
 		x1raw = load_signal(filename1, channel=config['channel'])
+		
+		if config['EMD'] == 'ON':
+			filename1 = filename1raw
 		
 		if config['power2'] == None:
 			n_points = 2**(max_2power(len(x1)))
@@ -78,6 +90,12 @@ def main(argv):
 
 		filename1 = os.path.basename(filename1) #changes from path to file
 		config['filename'] = filename1
+		if filename1.find('1500') != -1:
+			label = str(1500)
+		else:
+			label = str(1000)
+		print(label)
+		Filenames[k] = filename1
 		
 		x1, t_burst_corr1, amp_burst_corr1, results, clf_1 = burst_detector(x1raw, config, count=k)
 		X[k] = x1
@@ -88,22 +106,35 @@ def main(argv):
 		Results[k] = results
 		CLFs[k] = clf_1
 	Name = config['method']
+	
 	print('Detected Burst')
-	fig = [[], []]	
-	fig[0], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
-	for i in range(config['n_files']):
+	for i in range(config['n_files']):		
 		print(len(T_Burst[i]))
-		plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True)	
-
-	#++++++++++++++++++++++ BURSTS BACK IN RAW SIGNALS ++++++++
-	fig[1], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
-	for i in range(config['n_files']):
 		print(Results[i])
-		# clf_pickle1 = read_pickle(config['clf_files'][i])
-		# clf_1 = clf_pickle1['classification']
-		plot_burst(fig[1], ax, i, traw, XRAW[i], config, T_Burst[i], ARAW_Burst[i], name='RAW', color='darkblue', clf=CLFs[i])	
+	print(config)
+	if config['save'] == 'ON':
+		mylist = [Filenames, Results, config]
+		out_file = 'result_' + os.path.basename(config['NN_model'])
+		out_file = label + out_file
+		save_pickle(out_file, mylist)
+		# with io.open(out_file, 'w', encoding='unicode-escape') as f:
+			# f.writelines(line + u'\n' for line in mylist)
+		# np.savetxt('result_' + os.path.basename(config['NN_model']).replace('pkl', 'txt'), )
+	
+	if config['plot'] == 'ON':
+		fig = [[], []]
+		fig[0], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
+		for i in range(config['n_files']):
+			plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True)	
 
-	plt.show()
+		#++++++++++++++++++++++ BURSTS BACK IN RAW SIGNALS ++++++++
+		fig[1], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
+		for i in range(config['n_files']):
+			plot_burst(fig[1], ax, i, traw, XRAW[i], config, T_Burst[i], ARAW_Burst[i], name='RAW', color='darkblue', clf=CLFs[i])	
+		plt.show()
+	else:
+		print('Plot Off')
+	
 	return
 
 
@@ -162,7 +193,12 @@ def burst_detector(x1, config, count=None):
 		scaler = info_model[2]
 	else:
 		scaler = 0
-
+	
+	if config['features'] == 'pca_50' or config['features'] == 'pca_10' or config['features'] == 'pca_5':
+		print('PCA:')
+		pca = info_model[3]
+	else:
+		pca = 0
 
 	#Pre-processing
 	# config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}
@@ -181,8 +217,37 @@ def burst_detector(x1, config, count=None):
 		if config['data_norm'] != config_model['data_norm']:
 			print('error normalization model NN')
 			sys.exit()
+		if config['denois'] != config_model['denois']:
+			print('error denois model NN')
+			sys.exit()
+		if config['EMD'] != config_model['EMD']:
+			print('error EMD model NN')
+			sys.exit()
+		if config['processing'] != config_model['processing']:
+			print('error processing model NN')
+			sys.exit()
+		# print(config_model['denois'])
+		# a = input('pause....')
+		if config_model['denois'] == 'median':
+			if config['med_kernel'] != config_model['med_kernel']:
+				print('error med_kernel model NN')
+				sys.exit()
+		if config['features'] != config_model['features']:
+			print('error features model NN')
+			sys.exit()
 
 	#++++++++++++++++++++++SIGNAL PROCESSING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	if config['denois'] != 'OFF':
+		print('with denois')
+		x1 = signal_denois(x=x1, denois=config['denois'], med_kernel=config['med_kernel'])
+	else:
+		print('without denois')
+		
+	if config['processing'] != 'OFF':
+		print('with processing')
+		x1 = signal_processing(x1, config['processing'])
+	else:
+		print('without processing')
 	#Filter
 	# if config_filter['analysis'] == True:
 		# print('+++Filter:')
@@ -256,14 +321,17 @@ def burst_detector(x1, config, count=None):
 	Results = {'POS':0, 'NEG':0, 'FP':0, 'TP':0, 'TN':0, 'FN':0}
 
 	if config['method'] != None:
+		if config['data_norm'] == 'per_signal':
+			x1 = x1 / np.max(np.absolute(x1))
+			print('Normalization per signal')
+		elif config['data_norm'] == 'per_rms':
+			x1 = x1 / signal_rms(x1)
+			print('Normalization per rms')
+		
+		
 		if config['method'] == 'THR':
 		
-			if config['data_norm'] == 'per_signal':
-				x1 = x1 / np.max(np.absolute(x1))
-				print('Normalization per signal')
-			elif config['data_norm'] == 'per_rms':
-				x1 = x1 / signal_rms(x1)
-				print('Normalization per rms')
+			
 		
 		
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
@@ -339,13 +407,40 @@ def burst_detector(x1, config, count=None):
 					values = interval10_stats_nomean(window1)
 				elif config['features'] == 'interval5_stats_nomean':
 					values = interval5_stats_nomean(window1)
+				elif config['features'] == 'leftright_stats_nomean':
+					values = leftright_stats_nomean(window1)
+				elif config['features'] == 'leftright_std':
+					values = leftright_std(window1)
+				elif config['features'] == 'i10statsnm_lrstd':
+					values = i10statsnm_lrstd(window1)
+				elif config['features'] == 'i10statsnm_dif_lrstd':
+					values = i10statsnm_dif_lrstd(window1)
+				elif config['features'] == 'i10statsnm_lrstatsnm':
+					values = i10statsnm_lrstatsnm(window1)
+				elif config['features'] == 'means10':
+					values = means10(window1)
+				elif config['features'] == 'pca_50':
+					values = window1
+				elif config['features'] == 'pca_10':
+					values = window1
+				elif config['features'] == 'pca_5':
+					values = window1
+				elif config['features'] == 'i10statsnmnsnk_lrstd':
+					values = i10statsnmnsnk_lrstd(window1)
 				else:
 					print('error features')
 					sys.exit()
 				# points_intervals = n_per_intervals_left_right(window1, [-1., 1.], 5)
 				# values = basic_stats_sides
+				if config['features'] == 'pca_50' or config['features'] == 'pca_10' or config['features'] == 'pca_5':
+					values = pca.transform(values)
+				
 				
 				values = scaler.transform(values)
+				
+				# if numero == 5:
+					# print(values)
+					# sys.exit()
 				
 				features_fault.append(values)
 				prediction = clf.predict(values)
@@ -444,6 +539,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	config_input['warm_points'] = int(config_input['warm_points'])
 	config_input['diff_points'] = int(config_input['diff_points'])
 	config_input['class2'] = int(config_input['class2'])
+	config_input['med_kernel'] = int(config_input['med_kernel'])
 	
 	# Variable conversion
 	if config_input['prefilter'] != None:
@@ -510,14 +606,14 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		for i in range(len(t_burst_corr1)):
 			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='y', alpha=0.5)
 	if clf != None:
-		print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+		# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 		for k in range(len(clf)):
 			if clf[k] == 2:
 				print('error clf')
 				sys.exit()
 		ind_w_positives = [k for k in range(len(clf)) if clf[k] == 1]
-		print(len(ind_w_positives))
-		print(len(clf))
+		# print(len(ind_w_positives))
+		# print(len(clf))
 		for i in range(len(ind_w_positives)):
 			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.5)
 		
@@ -525,9 +621,14 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		name = 'Faulty Validation Signal: '
 	else:
 		name = 'Healthy Validation Signal: '
+		ax[nax].set_xlabel('Time (s)')
 	flag = config['filename'].find('1500')
 	if flag != -1:
-		name = name + '1500RPM / 80% Load'
+		flag2 = config['filename'].find('80')
+		if flag2 != -1:
+			name = name + '1500RPM / 80% Load'
+		else:
+			name = name + '1500RPM / 40% Load'
 	else:
 		name = name + '1000RPM / 80% Load'
 	ax[nax].set_title(name, fontsize=10)

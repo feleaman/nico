@@ -363,6 +363,24 @@ def interval10_stats_nomean(window):
 		stats.skew(np.array(intervals[i]), bias=False), stats.kurtosis(np.array(intervals[i]), fisher=False, bias=False)]
 	return values
 
+def interval10_stats_nmnsnk(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(10):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.std(intervals[i])]
+	return values
+
+
 def interval3_stats(window):
 	intervals = []
 	intervals.append(window[0:333])
@@ -378,6 +396,8 @@ def interval1_stats(window):
 	values = [np.max(window), np.min(window), np.mean(window), np.std(window), 
 	stats.skew(np.array(window), bias=False), stats.kurtosis(np.array(window), fisher=False, bias=False)]
 	return values
+
+
 
 def leftright_stats(window):
 	pos_max = np.argmax(window)
@@ -442,6 +462,80 @@ def leftright_stats_corr1(window):
 		print('error lens windows left and right+++++++++++++++++++++')
 	return values
 
+def leftright_stats_nomean(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		np.min(left_window), np.std(left_window), stats.skew(np.array(left_window), bias=False), stats.kurtosis(np.array(left_window), bias=False, fisher=False), np.min(right_window), np.std(right_window), stats.skew(np.array(right_window), bias=False), stats.kurtosis(np.array(right_window), bias=False, fisher=False)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [np.max(window), 
+		0., 0., 0., 0., np.min(right_window), np.std(right_window), stats.skew(np.array(right_window), bias=False), stats.kurtosis(np.array(right_window), bias=False, fisher=False)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.max(window), 
+		np.min(left_window), np.std(left_window), stats.skew(np.array(left_window), bias=False), stats.kurtosis(np.array(left_window), bias=False, fisher=False), 0., 0., 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
+def i10statsnm_lrstd(window):
+	values = leftright_std(window) + interval10_stats_nomean(window)
+	return values
+
+def i10statsnmnsnk_lrstd(window):
+	values = leftright_std(window) + interval10_stats_nmnsnk(window)
+	return values
+
+def i10statsnm_lrstatsnm(window):
+	values = leftright_stats_nomean(window) + interval10_stats_nomean(window)
+	return values
+
+def i10statsnm_dif_lrstd(window):
+	values = leftright_std(window) + interval10_stats_nomean(window) + dif_interval10_stats_nomean(window)
+	return values
+
+def means10(window):
+	values = []
+	count = 0
+	for i in range(int(len(window)/10)):
+		count = count + 1
+		values = values + [np.mean(window[i:i+10])]
+
+	return values
+	
+def dif_interval10_stats_nomean(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(9):
+		values = values + [np.max(intervals[i+1])-np.max(intervals[i]), np.min(intervals[i+1])-np.min(intervals[i]), np.std(intervals[i+1])-np.std(intervals[i]), stats.skew(np.array(intervals[i+1]), bias=False)-stats.skew(np.array(intervals[i]), bias=False), stats.kurtosis(np.array(intervals[i+1]), fisher=False, bias=False)-stats.kurtosis(np.array(intervals[i]), fisher=False, bias=False)]
+	return values
+
+def leftright_std(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.std(left_window), np.std(right_window)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [0., np.std(right_window)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.std(left_window), 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
 # def n_per_10intervals_corr1(data, interval):
 	# divisions = 10
 	# data = sorted(data)

@@ -31,17 +31,20 @@ import argparse
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler  
 import datetime
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import RFE
 plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 
 
+
 Inputs = ['channel', 'save', 'files', 'classifications', 'layers', 'features']
-Inputs_opt = ['window_time', 'overlap', 'data_norm', 'solver', 'alpha', 'rs', 'activation', 'tol', 'max_iter', 'filter']
-Defaults = [0.001, 0, 'per_signal', 'lbfgs', 1.e-3, 1, 'relu', 1.e-6, 400000, 'OFF']
+Inputs_opt = ['window_time', 'overlap', 'data_norm', 'solver', 'alpha', 'rs', 'activation', 'tol', 'max_iter', 'denois', 'EMD', 'med_kernel', 'processing', 'NN_name', 'eval_features']
+Defaults = [0.001, 0, 'per_signal', 'lbfgs', 1.e-3, 1, 'relu', 1.e-6, 400000, 'OFF', 'OFF', 3, 'OFF', 'auto', 'OFF']
 
 def main(argv):
 	config = read_parser(argv, Inputs, Inputs_opt, Defaults)
-	
+
 	print('Fs = 1 MHz for AE')
 	fs = 1000000.0
 	n_files = len(config['files'])
@@ -79,8 +82,18 @@ def main(argv):
 		
 		#Signals
 		print(filepath)
-		x = load_signal(filepath)
-		x = x[0:checked_points_in_file]		
+		if config['EMD'] == 'ON':
+			filepathraw = filepath
+			print('with h1 MED component')
+			filepath = filepath.replace(os.path.basename(filepath), 'h1_' + os.path.basename(filepath))
+			filepath = filepath.replace('.mat', '.txt')
+		
+		x = load_signal(filepath, channel=config['channel'])
+		x = x[0:checked_points_in_file]
+		
+		if config['EMD'] == 'ON':
+			filepath = filepathraw
+
 		
 		if info_classification_pickle['config_analysis']['start_in'] != 0:
 			start_in_time = info_classification_pickle['config_analysis']['start_in']
@@ -101,20 +114,17 @@ def main(argv):
 			print(len(x))
 			print(x.shape)
 		
+		if config['denois'] != 'OFF':
+			print('with denois')
+			x = signal_denois(x=x, denois=config['denois'], med_kernel=config['med_kernel'])
+		else:
+			print('without denois')
 		
-		if config['filter'] == 'ON':
-			sys.exit()
-			print('+++Filter:')
-			if config_filter['type'] == 'bandpass':
-				print('Bandpass')
-				f_nyq = 0.5*fs
-				order = config_filter['params'][1]
-				freqs_bandpass = [config_filter['params'][0][0]/f_nyq, config_filter['params'][0][1]/f_nyq]
-				b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
-				x = signal.filtfilt(b, a, x)
-			elif config_filter['type'] == 'median':
-				print('Median')
-				x = scipy.signal.medfilt(x, kernel_size=config_filter['median_kernel'])
+		if config['processing'] != 'OFF':
+			print('with processing')
+			x = signal_processing(x, config['processing'])
+		else:
+			print('without processing')
 
 		Signals.append(x)
 		
@@ -136,10 +146,16 @@ def main(argv):
 	window_advance = int(window_points*config['overlap'])
 
 	for x, classification, n_windows in zip(Signals, Classifications_per_file, Windows_per_file):
+		
+	
 		if config['data_norm'] == 'per_signal':
 			x = x / np.max(np.absolute(x))
 			x = x.tolist()
 			print('normalization per signal!!!!!!')
+		elif config['data_norm'] == 'per_rms':
+			x = x / signal_rms(x)
+			x = x.tolist()
+			print('normalization per RMS!!!!!!')
 		
 		for count in range(n_windows):
 			if config['overlap'] != 0:
@@ -166,7 +182,7 @@ def main(argv):
 				features.append(values)
 				
 			else:
-				print('without overlap!!!')
+				# print('without overlap!!!')
 				current_window = x[count*window_points:(count+1)*window_points]
 				
 				if config['data_norm'] == 'per_window':
@@ -180,38 +196,102 @@ def main(argv):
 					values = interval10_stats(current_window)
 				elif config['features'] == 'interval5_stats_nomean':
 					values = interval5_stats_nomean(current_window)
+				elif config['features'] == 'leftright_stats_nomean':
+					values = leftright_stats_nomean(current_window)
+				elif config['features'] == 'leftright_std':
+					values = leftright_std(current_window)
+				elif config['features'] == 'i10statsnm_lrstd':
+					values = i10statsnm_lrstd(current_window)
+				elif config['features'] == 'i10statsnm_dif_lrstd':
+					values = i10statsnm_dif_lrstd(current_window)
+				elif config['features'] == 'i10statsnm_lrstatsnm':
+					values = i10statsnm_lrstatsnm(current_window)
+				elif config['features'] == 'means10':
+					values = means10(current_window)
+				elif config['features'] == 'pca_50':
+					values = current_window
+				elif config['features'] == 'pca_10':
+					values = current_window
+				elif config['features'] == 'pca_5':
+					values = current_window
+				elif config['features'] == 'i10statsnmnsnk_lrstd':
+					values = i10statsnmnsnk_lrstd(current_window)
 				else:
 					print('error name features')
 					sys.exit()
 				
 				# values = basic_stats_sides		
 				features.append(values)
-
 			master_classification.append(classification[count])
 	print('total number windows = ', len(features))
 	
 
-	
 	clf = MLPClassifier(solver=config['solver'], alpha=config['alpha'],
 	hidden_layer_sizes=config['layers'], random_state=config['rs'],
 	activation=config['activation'], tol=config['tol'], verbose=True,
-	max_iter=config['max_iter'])	
-
+	max_iter=config['max_iter'])
+	
+	if config['features'] == 'pca_50':
+		pca = PCA(n_components=50)
+		pca.fit(features)
+		features = pca.transform(features)
+	elif config['features'] == 'pca_10':
+		pca = PCA(n_components=10)
+		pca.fit(features)
+		features = pca.transform(features)
+	elif config['features'] == 'pca_5':
+		pca = PCA(n_components=5)
+		pca.fit(features)
+		features = pca.transform(features)
+	else:
+		pca = 'no_pca'
 	
 	#Scale
 	scaler = StandardScaler()
 	scaler.fit(features)
 	features = scaler.transform(features)
 	
-	print(len(features))
-	print(len(features[0]))
-	print(len(master_classification))
+	if config['eval_features'] == 'ON':
+		# print(len(features))
+		# print(len(features[0]))
+		features = list(map(list, zip(*features)))
+		# print(len(features))
+		# print(len(features[0]))
+		# print(len(master_classification))
+		
+		for i in range(len(features)):
+			np.savetxt('feature' + str(i) + '.txt', features[i])
+		np.savetxt('classification.txt', master_classification)
+		sys.exit()
+		# for i in range(len(features)):
+			
+	
+	# print(features)
+	# print(len(features))
+	# a = input('pause:_')
+	# # print(len(features[0]))
+	# print(master_classification)
+	# print(len(master_classification))
+	# a = input('pause:_')
 	clf.fit(features, master_classification)
-
+	# if config['eval_features'] == 'ON':
+		# print('jajajajaaj')
+		# selector = RFE(clf)
+		# a = input('pause:  ')
+		# selector = selector.fit(features, master_classification)
+		# print(selector.ranking_)
+		# sys.exit()
+	# else:	
+		# clf.fit(features, master_classification)
+	# sys.exit()
 	# Save pickle model
-	clf_pickle_info = [config, clf, scaler]
-	stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-	save_pickle('clf_' + stamp + '_' + '.pkl', clf_pickle_info)
+	clf_pickle_info = [config, clf, scaler, pca]
+	if config['NN_name'] == 'auto':
+		stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+	else:
+		stamp = config['NN_name']
+	save_pickle('clf_' + stamp + '.pkl', clf_pickle_info)
+	print(config)
 	return
 
 	
@@ -247,7 +327,8 @@ def read_parser(argv, Inputs, Inputs_opt, Defaults):
 	config_input['alpha'] = float(config_input['alpha'])
 	config_input['tol'] = float(config_input['tol'])	
 	#Type conversion to int	
-	config_input['max_iter'] = int(config_input['max_iter'])	
+	config_input['max_iter'] = int(config_input['max_iter'])
+	config_input['med_kernel'] = int(config_input['med_kernel'])	
 	# Variable conversion	
 	correct_layers = tuple([int(element) for element in (config_input['layers'])])
 	config_input['layers'] = correct_layers
@@ -256,7 +337,10 @@ def read_parser(argv, Inputs, Inputs_opt, Defaults):
 	
 	return config_input
 
-	
+
+
+
+
 
 if __name__ == '__main__':
 	main(sys.argv)

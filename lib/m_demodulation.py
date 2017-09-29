@@ -68,8 +68,21 @@ def butter_demodulation(x, fs, filter, prefilter=None, type_rect=None, dc_value=
 	
 	return x_demod
 
-def hilbert_demodulation(x):		
-	x_ana = signal.hilbert(x)
+def hilbert_demodulation(x, rect=None):
+	#Rectification
+	n = len(x)
+	if rect == 'only_positives':
+		x_rect = np.zeros(n)
+		for i in range(n):
+			if x[i] > 0:
+				x_rect[i] = x[i]
+	elif rect == 'absolute_value':
+		x_rect = np.abs(x)
+	else:
+		print('Info: Demodulation without rectification')
+		x_rect = x
+	
+	x_ana = signal.hilbert(x_rect)
 	x_demod = np.abs(x_ana)
 	return x_demod
 	

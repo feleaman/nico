@@ -65,6 +65,10 @@ elif extension == 'tdm': #tdms
 	x1 = f_open_tdms(filename1, channel)
 	x2 = f_open_tdms(filename1, channel)
 
+elif extension == 'txt': #tdms
+	x1 = np.loadtxt(filename1)
+	x2 = np.loadtxt(filename2)
+
 filename1 = os.path.basename(filename1) #changes from path to file
 filename2 = os.path.basename(filename2)
 
@@ -84,13 +88,44 @@ if args.power2 == None:
 x1 = x1[0:n_points]
 x2 = x2[0:n_points]	
 
+# x1 = np.zeros(len(x1))
+# x2 = np.zeros(len(x2))
+
+
+# x1[100000] = 1.
+# x1[100001] = 1.
+# x1[100002] = 1.
+# x1[100003] = 1.
+# x1[100004] = 1.
+# x1[100005] = 1.
+
+
+# x1[200003] = 1.
+# x1[200004] = 1.
+# x1[200005] = 1.
+# x1[200006] = 1.
+# x1[200007] = 1.
+# x1[200008] = 1.
+
+# x1[300005] = 1.
+# x1[300006] = 1.
+# x1[300007] = 1.
+# x1[300008] = 1.
+# x1[300009] = 1.
+# x1[300010] = 1.
+
+
+
+
+
+
 dt = 1.0/fs
 n_points = len(x1)
 tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
-config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
+config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
 'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
@@ -99,7 +134,7 @@ config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
-config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
+config_demod = {'analysis':True, 'mode':'hilbert', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
 'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 500.0, 3], 'warm_points':20000}
 #When hilbert is selected, the other parameters are ignored
 
@@ -142,24 +177,23 @@ if config_filter['analysis'] == True:
 		x2 = signal.filtfilt(b, a, x2)
 	elif config_filter['type'] == 'median':
 		print('Median')
-		x1 = scipy.signal.medfilt(x1)
-		x2 = scipy.signal.medfilt(x2)
+		x1 = scipy.signal.medfilt(x1, kernel_size=5)
+		x2 = scipy.signal.medfilt(x2, kernel_size=5)
 
-#Autocorrelation
-if config_autocorr['analysis'] == True:
-	print('+++Filter:')
-	if config_autocorr['type'] == 'definition':
-		x1 = np.correlate(x1, x1, mode=config_autocorr['mode'])
-		x2 = np.correlate(x2, x2, mode=config_autocorr['mode'])
-	
-	elif config_autocorr['type'] == 'wiener':	
-		fftx1 = np.fft.fft(x1)
-		x1 = np.real(np.fft.ifft(fftx1*np.conjugate(fftx1)))
-		
-		fftx2 = np.fft.fft(x2)
-		x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
+
+
+
+#Differentiation
+if config_diff['analysis'] == True:
+	print('+++Differentiation:')
+	if config_diff['same'] == True:
+		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
+	elif config_diff['same'] == False:
+		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
+		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
 	else:
-		print('Error assignment autocorrelation')
+		print('Error assignment diff')	
 
 #Demodulation
 if config_demod['analysis'] == True:
@@ -175,18 +209,21 @@ if config_demod['analysis'] == True:
 	else:
 		print('Error assignment demodulation')
 
-#Differentiation
-if config_diff['analysis'] == True:
-	print('+++Differentiation:')
-	if config_diff['same'] == True:
-		x1 = diff_signal_eq(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal_eq(x=x2, length_diff=config_diff['length'])
-	elif config_diff['same'] == False:
-		x1 = diff_signal(x=x1, length_diff=config_diff['length'])
-		x2 = diff_signal(x=x2, length_diff=config_diff['length'])
+#Autocorrelation
+if config_autocorr['analysis'] == True:
+	print('+++Autocorr:')
+	if config_autocorr['type'] == 'definition':
+		x1 = np.correlate(x1, x1, mode=config_autocorr['mode'])
+		x2 = np.correlate(x2, x2, mode=config_autocorr['mode'])
+	
+	elif config_autocorr['type'] == 'wiener':	
+		fftx1 = np.fft.fft(x1)
+		x1 = np.real(np.fft.ifft(fftx1*np.conjugate(fftx1)))
+		# x1 = x1[0:int(len(x1)/2)]
+		fftx2 = np.fft.fft(x2)
+		x2 = np.real(np.fft.ifft(fftx2*np.conjugate(fftx2)))
 	else:
-		print('Error assignment diff')	
-		
+		print('Error assignment autocorrelation')
 
 warm = 0.0
 if (config_demod['warm_points'] != 0 and config_demod['mode'] == 'butter' and config_demod['analysis'] == True):
@@ -257,6 +294,10 @@ if config_analysis['CyclicSpectrum'] == True:
 		CyclicSpectrum1 = np.log(CyclicSpectrum1)
 		CyclicSpectrum2 = np.log(CyclicSpectrum2)
 
+	
+print(len(x1))
+print(len(x2))
+
 #++++++++++++++++++++++ MULTI PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 count = 1
 
@@ -264,6 +305,8 @@ for element in config_analysis:
 	if config_analysis[element] == True:
 		if element == 'WFM':
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+			# tx = np.linspace(0, t[len(t)-1], len(x1))
+			# x1 = np.interp(t, tx, x1)
 			ax[0].plot(t, x1)
 			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
 			ax[0].set_title('Faulty Train Signal: 1500RPM / 80% Load', fontsize=10)

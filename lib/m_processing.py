@@ -127,3 +127,15 @@ def max_2power(n_x):
 	# n__max2power = 2**count
 	power2 = count
 	return power2
+
+def signal_processing(x, processing):
+	if processing == 'demod_hilbert':
+		x = hilbert_demodulation(x)
+	elif processing == 'times_demod_hilbert':
+		x = hilbert_demodulation(x)*x
+	elif processing == 'square':
+		x = x**2.0
+	else:
+		print('unknown processing')
+		sys.exit()
+	return x

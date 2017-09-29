@@ -111,3 +111,11 @@ def median_filter(data, points, same_length):
 		print('Same length median filter ON')
 		new_data = np.interp(x=np.linspace(0, new_n-1, num=n), xp=np.linspace(0, new_n-1, num=new_n), fp=new_data)
 	return new_data
+
+def	signal_denois(x, denois, med_kernel=None):
+	if denois == 'median':
+		x = scipy.signal.medfilt(x, kernel_size=med_kernel)
+	else:
+		print('unknown denois')
+		sys.exit()
+	return x
