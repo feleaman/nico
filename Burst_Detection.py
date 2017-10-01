@@ -38,10 +38,14 @@ Opt_Input_analysis = {'EMD':'OFF', 'denois':'OFF', 'med_kernel':3, 'processing':
 Opt_Input_thr = {'thr_mode':'factor_rms', 'thr_value':1}
 Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':100, 'diff_points':1}
 Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard', 'class2':0}
+Opt_Input_win = {'rms_change':0.5}
+
 Opt_Input.update(Opt_Input_analysis)
 Opt_Input.update(Opt_Input_thr)
 Opt_Input.update(Opt_Input_cant)
 Opt_Input.update(Opt_Input_nn)
+Opt_Input.update(Opt_Input_win)
+
 
 
 
@@ -152,6 +156,7 @@ def burst_detector(x1, config, count=None):
 			root.withdraw()
 			root.update()
 			clf_pickle1 = filedialog.askopenfilename()
+			clf_pickle1 = read_pickle(clf_pickle1)
 		# clf_file2 = filedialog.askopenfilename()
 			root.destroy()
 		else:
@@ -168,6 +173,9 @@ def burst_detector(x1, config, count=None):
 		if clf_pickle1['filename'] != config['filename']:
 			print('error filename 1')
 			sys.exit()
+	else:
+		print('without clf check')
+		clf_1 = None
 
 
 	if config['method'] == 'NN':
@@ -338,61 +346,64 @@ def burst_detector(x1, config, count=None):
 			
 			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=config['fs'], threshold=threshold1, t_window=config['window_time'])
 			
-			tWindows = []
-			window_points = int(config['window_time']*config['fs'])
-			n_windows = int(n_points/window_points)
-			for count in range(n_windows):
-				tWindows.append(t[count*window_points:(count+1)*window_points])
-			count = 0
-			for twindow in tWindows:
-				flag = 'OFF'
-				if clf_1[count] == 2:
-					clf_1[count] = config['class2']
-				if clf_1[count] == 0:
-					Results['NEG'] = Results['NEG'] + 1
-					for time_burst in t_burst_corr1:
-						if time_burst in twindow:
-							# print('++++++++++++FP in ', count*config['window_time'])
-							Results['FP'] = Results['FP'] + 1
-							flag = 'ON'
-					if flag == 'OFF':
-						Results['TN'] = Results['TN'] + 1
-				elif clf_1[count] == 1:
-					Results['POS'] = Results['POS'] + 1
-					for time_burst in t_burst_corr1:
-						if time_burst in twindow:
-							Results['TP'] = Results['TP'] + 1
-							flag = 'ON'
-					if flag == 'OFF':
-						Results['FN'] = Results['FN'] + 1
-				else:
-					print('error file clf')
-					sys.exit()
-				count = count + 1
+			if config['clf_check'] == 'ON':
+				tWindows = prepare_windows(t, config)
+				# tWindows = []
+				# window_points = int(config['window_time']*config['fs'])
+				# n_windows = int(n_points/window_points)
+				# for count in range(n_windows):
+					# tWindows.append(t[count*window_points:(count+1)*window_points])
+				
+				count = 0
+				for twindow in tWindows:
+					flag = 'OFF'
+					if clf_1[count] == 2:
+						clf_1[count] = config['class2']
+					if clf_1[count] == 0:
+						Results['NEG'] = Results['NEG'] + 1
+						for time_burst in t_burst_corr1:
+							if time_burst in twindow:
+								# print('++++++++++++FP in ', count*config['window_time'])
+								Results['FP'] = Results['FP'] + 1
+								flag = 'ON'
+						if flag == 'OFF':
+							Results['TN'] = Results['TN'] + 1
+					elif clf_1[count] == 1:
+						Results['POS'] = Results['POS'] + 1
+						for time_burst in t_burst_corr1:
+							if time_burst in twindow:
+								Results['TP'] = Results['TP'] + 1
+								flag = 'ON'
+						if flag == 'OFF':
+							Results['FN'] = Results['FN'] + 1
+					else:
+						print('error file clf')
+						sys.exit()
+					count = count + 1
+			else:
+				print('without clf check')
 
 			# t_burst_corr1 = t_burst_corr1 + np.ones(len(t_burst_corr1))*warm*dt
 		
-		elif config['method'] == 'NN':
-		
-			Windows1 = []
-			window_points = int(config['window_time']*config['fs'])
-			window_advance = int(window_points*config['overlap'])
-			if config['overlap'] != 0:
-				print('Windows with overlap')
-				n_windows = int((n_points - window_points)/window_advance) + 1
-			else:
-				n_windows = int(n_points/window_points)
-			print('Number of windows: ', n_windows)
+		elif config['method'] == 'NN':		
+			# Windows1 = []
+			# window_points = int(config['window_time']*config['fs'])
+			# window_advance = int(window_points*config['overlap'])
+			# if config['overlap'] != 0:
+				# print('Windows with overlap')
+				# n_windows = int((n_points - window_points)/window_advance) + 1
+			# else:
+				# n_windows = int(n_points/window_points)
+			# print('Number of windows: ', n_windows)
 			
-			if config['data_norm'] == 'per_signal':
-				x1 = x1 / np.max(np.absolute(x1))
-				print('Normalization per signal')		
 			
-			for count in range(n_windows):
-				if config['overlap'] != 0:
-					Windows1.append(x1[count*window_advance:window_points+window_advance*count])
-				else:
-					Windows1.append(x1[count*window_points:(count+1)*window_points])
+			# for count in range(n_windows):
+				# if config['overlap'] != 0:
+					# Windows1.append(x1[count*window_advance:window_points+window_advance*count])
+				# else:
+					# Windows1.append(x1[count*window_points:(count+1)*window_points])
+			
+			Windows1 = prepare_windows(x1, config)
 			
 			Predictions1 = []
 			features_fault = []
@@ -444,24 +455,26 @@ def burst_detector(x1, config, count=None):
 				
 				features_fault.append(values)
 				prediction = clf.predict(values)
-				
-				if prediction[0] == 2:
-					prediction[0] = config['class2']
-				if clf_1[numero] == 2:
-					clf_1[numero] = config['class2']
-				
-				if clf_1[numero] == 0:
-					Results['NEG'] = Results['NEG'] + 1
-					if prediction[0] == clf_1[numero]:
-						Results['TN'] = Results['TN'] + 1
-					else:
-						Results['FP'] = Results['FP'] + 1
-				elif clf_1[numero] == 1:
-					Results['POS'] = Results['POS'] + 1
-					if prediction[0] == clf_1[numero]:
-						Results['TP'] = Results['TP'] + 1
-					else:
-						Results['FN'] = Results['FN'] + 1
+				if config['clf_check'] == 'ON':
+					if prediction[0] == 2:
+						prediction[0] = config['class2']
+					if clf_1[numero] == 2:
+						clf_1[numero] = config['class2']
+					
+					if clf_1[numero] == 0:
+						Results['NEG'] = Results['NEG'] + 1
+						if prediction[0] == clf_1[numero]:
+							Results['TN'] = Results['TN'] + 1
+						else:
+							Results['FP'] = Results['FP'] + 1
+					elif clf_1[numero] == 1:
+						Results['POS'] = Results['POS'] + 1
+						if prediction[0] == clf_1[numero]:
+							Results['TP'] = Results['TP'] + 1
+						else:
+							Results['FN'] = Results['FN'] + 1
+				else:
+					print('without check')
 
 				Predictions1.append(prediction[0])
 
@@ -473,7 +486,93 @@ def burst_detector(x1, config, count=None):
 				if Predictions1[i] == 1:
 					t_burst_corr1.append(i*config['window_time'])
 					amp_burst_corr1.append(x1[int(i*config['window_time']*config['fs'])])
+		
+		elif config['method'] == 'WIN':
+			print('not yet')
+			Windows = prepare_windows(x1, config)
+			RMSs = []
+			for k in range(len(Windows)):
+				RMSs.append(signal_rms(Windows[k]))
+			
+			Predictions = []
+			Predictions.append(0)
+			for k in range(len(RMSs)-1):
+				if RMSs[k+1] - RMSs[k] > config['rms_change']:
+					Predictions.append(1)
+				else:
+					Predictions.append(0)
+			t_burst_corr1 = []
+			amp_burst_corr1 = []
+			for i in range(len(Predictions)):
+				if Predictions[i] == 1:
+					if config['overlap'] == 0:
+						t_burst_corr1.append(i*config['window_time'])
+						amp_burst_corr1.append(x1[int(i*config['window_time']*config['fs'])])
+					else:
+						#detecciones dobles
+						t_burst_corr1.append(i*config['window_time']*config['overlap'])
+						amp_burst_corr1.append(x1[int(i*config['window_time']*config['overlap']*config['fs'])])
+		
+		elif config['method'] == 'DFP':
+			df_x = np.log(1. + np.absolute(x1))
+			# df_x = x1
+			plt.figure(0)
+			plt.plot(df_x)
+			
 
+			
+			
+			locs = dfp_alg2(df_x)
+
+			
+			plt.figure(1)
+			plt.plot(df_x)
+			level_ini = 0.01
+			level_fin = 0.1
+			steps = 3
+			locs = dfp_alg3(df_x, locs, level_ini, level_fin, steps)
+			# level = 0.1
+			# for i in range(len(locs)):
+				# if (locs[i] == 1 or locs[i] == -1):
+					# flag = False
+					# count = 0
+					# while flag == False:
+						# count = count + 1
+						# if i+count >= len(locs):
+							# break
+						# if (locs[i+count] == 1 or locs[i+count] == -1):
+							# flag = True
+					# if flag == True:
+						# dif  = np.absolute(df_x[i+count] - df_x[i])
+						# if dif < level:
+							# locs[i] = 0
+							# locs[i+count] = 0
+			
+			
+			# for i in range(len(df_x)):
+				# if locs[i] == 0:
+					# df_x[i] = 0
+			
+			
+			plt.figure(2)
+			plt.plot(df_x)
+					
+					
+			
+			
+			plt.show()
+			
+			threshold1 = 0.1
+			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=df_x, fs=config['fs'], threshold=threshold1, t_window=config['window_time'])
+
+			# sys.exit()
+			
+		else:
+			print('Unknown Method')
+			sys.exit()
+			
+			
+			
 	#++++++++++++++++++++++ PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	# if config_filter['analysis'] == True:
 		# Name = Name + ' FIL'
@@ -483,18 +582,18 @@ def burst_detector(x1, config, count=None):
 		# Name = Name + ' ENV'		
 	# if config_diff['analysis'] == True:
 		# Name = Name + ' DIF'
-	
-	Results['Accu'] = 100. * (Results['TN'] + Results['TP']) / (Results['POS'] + Results['NEG'])
-	if Results['POS'] != 0:
-		Results['Recall'] = 100. * (Results['TP']) / (Results['POS'])
-	else:
-		Results['Recall'] = -1
-	if (Results['TP'] + Results['FP']) != 0:
-		Results['Precision'] = 100. * (Results['TP']) / (Results['TP'] + Results['FP'])
-	else:
-		Results['Precision'] = -1
-	Results['FScore'] = 2 * Results['Recall'] * Results['Precision'] / (Results['Recall'] + Results['Precision'])
-	Results['FPR'] = 100. * (Results['FP']) / (Results['NEG'])
+	if config['clf_check'] == 'ON':
+		Results['Accu'] = 100. * (Results['TN'] + Results['TP']) / (Results['POS'] + Results['NEG'])
+		if Results['POS'] != 0:
+			Results['Recall'] = 100. * (Results['TP']) / (Results['POS'])
+		else:
+			Results['Recall'] = -1
+		if (Results['TP'] + Results['FP']) != 0:
+			Results['Precision'] = 100. * (Results['TP']) / (Results['TP'] + Results['FP'])
+		else:
+			Results['Precision'] = -1
+		Results['FScore'] = 2 * Results['Recall'] * Results['Precision'] / (Results['Recall'] + Results['Precision'])
+		Results['FPR'] = 100. * (Results['FP']) / (Results['NEG'])
 
 	return x1, t_burst_corr1, amp_burst_corr1, Results, clf_1
 
@@ -532,7 +631,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	config_input['overlap'] = float(config_input['overlap'])
 	config_input['window_time'] = float(config_input['window_time'])
 	config_input['thr_value'] = float(config_input['thr_value'])
-	
+	config_input['rms_change'] = float(config_input['rms_change'])
 	#Type conversion to int
 	config_input['n_files'] = int(config_input['n_files'])
 	config_input['power2'] = int(config_input['power2'])
@@ -566,7 +665,7 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
 			ax[nax].axhline(threshold1, color='k')		
 		ax[nax].plot(t_burst_corr1, amp_burst_corr1, 'ro')
-	elif config['method'] == 'NN':
+	elif config['method'] == 'NN' or config['method'] == 'WIN':
 		for i in range(len(t_burst_corr1)):
 			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='y', alpha=0.5)
 	if clf != None:
@@ -597,12 +696,12 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		ax = [ax]
 
 	ax[nax].plot(t, x1, color=color)
-	if config['method'] == 'THR':
+	if (config['method'] == 'THR' or config['method'] == 'DFP'):
 		if thr == True:
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
 			ax[nax].axhline(threshold1, color='k')		
 		ax[nax].plot(t_burst_corr1, amp_burst_corr1, 'ro')
-	elif config['method'] == 'NN':
+	elif config['method'] == 'NN' or config['method'] == 'WIN':
 		for i in range(len(t_burst_corr1)):
 			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='y', alpha=0.5)
 	if clf != None:
@@ -645,6 +744,65 @@ def read_threshold(mode, value, x1=None):
 		sys.exit()
 	return threshold1
 
+def prepare_windows(x, config):
+	n_points = len(x)
+	Windows1 = []
+	window_points = int(config['window_time']*config['fs'])
+	window_advance = int(window_points*config['overlap'])
+	if config['overlap'] != 0:
+		print('Windows with overlap')
+		n_windows = int((n_points - window_points)/window_advance) + 1
+	else:
+		n_windows = int(n_points/window_points)
+	print('Number of windows: ', n_windows)
+	
+	
+	for count in range(n_windows):
+		if config['overlap'] != 0:
+			Windows1.append(x[count*window_advance:window_points+window_advance*count])
+		else:
+			Windows1.append(x[count*window_points:(count+1)*window_points])
+	return Windows1
+
+def dfp_alg2(df_x):
+	peaks_ind = []
+	valleys_ind = []
+	locs = np.zeros(len(df_x))
+	for i in range(len(df_x)-2):
+		if (df_x[i+1] > df_x[i] and df_x[i+1] > df_x[i+2]):
+			peaks_ind.append(i)
+			locs[i+1] = 1
+		elif (df_x[i+1] < df_x[i] and df_x[i+1] < df_x[i+2]):
+			valleys_ind.append(i)
+			locs[i+1] = -1
+	return locs
+
+def dfp_alg3(df_x, locs, level_ini, level_fin, steps):
+	Levels = np.linspace(level_ini, level_fin, steps)
+	for level in Levels:
+		for i in range(len(locs)):
+			if (locs[i] == 1 or locs[i] == -1):
+				flag = False
+				count = 0
+				while flag == False:
+					count = count + 1
+					if i+count >= len(locs):
+						break
+					if (locs[i+count] == 1 or locs[i+count] == -1):
+						flag = True
+				if flag == True:
+					dif  = np.absolute(df_x[i+count] - df_x[i])
+					if dif < level:
+						locs[i] = 0
+						locs[i+count] = 0
+		for i in range(len(df_x)):
+			if locs[i] == 0:
+				df_x[i] = 0
+		locs = dfp_alg2(df_x)
+	return locs
+	
+	
+	
 
 if __name__ == '__main__':
 	main(sys.argv)
