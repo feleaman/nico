@@ -135,6 +135,8 @@ def signal_processing(x, processing):
 		x = hilbert_demodulation(x)*x
 	elif processing == 'square':
 		x = x**2.0
+	elif processing == 'df_log':
+		x = np.log10(1. + np.absolute(x))
 	else:
 		print('unknown processing')
 		sys.exit()

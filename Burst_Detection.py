@@ -438,6 +438,20 @@ def burst_detector(x1, config, count=None):
 					values = window1
 				elif config['features'] == 'i10statsnmnsnk_lrstd':
 					values = i10statsnmnsnk_lrstd(window1)
+				elif config['features'] == 'i10statsnmnsnknmin_lrstd':
+					values = i10statsnmnsnknmin_lrstd(window1)
+				elif config['features'] == 'i10maxminrms_lrrms':
+					values = i10maxminrms_lrrms(window1)
+				elif config['features'] == 'i10maxminstd_lrrmsstd':
+					values = i10maxminstd_lrrmsstd(window1)
+				elif config['features'] == 'i10statsnmnsnknmin_lrstd_lrnper5':
+					values = i10statsnmnsnknmin_lrstd_lrnper5(window1)
+				elif config['features'] == 'i10statsnmnsnk_lrstd_lrmeanper5':
+					values = i10statsnmnsnk_lrstd_lrmeanper5(window1)
+				elif config['features'] == 'i10statsnmnsnk_lrstd_lrnper5':
+					values = i10statsnmnsnk_lrstd_lrnper5(window1)
+					
+					
 				else:
 					print('error features')
 					sys.exit()
@@ -514,7 +528,7 @@ def burst_detector(x1, config, count=None):
 						amp_burst_corr1.append(x1[int(i*config['window_time']*config['overlap']*config['fs'])])
 		
 		elif config['method'] == 'DFP':
-			df_x = np.log(1. + np.absolute(x1))
+			df_x = np.log10(1. + np.absolute(x1))
 			# df_x = x1
 			plt.figure(0)
 			plt.plot(df_x)

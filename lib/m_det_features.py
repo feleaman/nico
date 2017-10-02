@@ -245,6 +245,10 @@ def n_per_intervals(data, interval, divisions):
 		if cont != 0:
 			save = cont + save
 	if np.sum(values) != len(data):
+		print(np.sum(values))
+		print(len(data))
+		print(interval)
+		print(interval_length)
 		print('error n per intervals')
 		sys.exit()
 	values = values.tolist()
@@ -275,29 +279,62 @@ def n_per_intervals(data, interval, divisions):
 	# return values
 
 	
-# def n_per_5intervals(data, interval):
-	# divisions = 5
-	# data = sorted(data)
-	# save = 0
-	# values = np.zeros(divisions)
-	# interval_length = (interval[1] - interval[0])/divisions
-	# for i in range(divisions):		
-		# cont = 0
-		# for k in range(len(data)-save):
-			# if (data[k+save] <= interval[0] + interval_length*(i+1)):
-				# cont = cont + 1
-			# else:
-				# break
-		# values[i] = cont
-		# if cont != 0:
-			# save = cont + save
-	# if np.sum(values) != len(data):
-		# print('error n per intervals')
-		# sys.exit()
-	# # values = values - 250.0
-	# # values = values / 250.0
-	# values = values.tolist()
-	# return values
+def n_per_5intervals(data, interval):
+	divisions = 5
+	data = sorted(data) 
+	save = 0
+	values = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	# values = values - 250.0
+	# values = values / 250.0
+	values = values.tolist()
+	return values
+
+def mean_5perinterval(data, interval):
+	divisions = 5
+	data = sorted(data) 
+	save = 0
+	
+	values = np.zeros(divisions)
+	means = np.zeros(divisions)
+	interval_length = (interval[1] - interval[0])/divisions
+	for i in range(divisions):		
+		cont = 0
+		sum = 0
+		for k in range(len(data)-save):
+			if (data[k+save] <= interval[0] + interval_length*(i+1)):
+				cont = cont + 1
+				sum = sum + data[k+save]
+			else:
+				break
+		values[i] = cont
+		if cont != 0:
+			means[i] = sum/cont
+		else:
+			means[i] = 0.
+		if cont != 0:
+			save = cont + save
+	if np.sum(values) != len(data):
+		print('error n per intervals')
+		sys.exit()
+	# values = values - 250.0
+	# values = values / 250.0
+	values = values.tolist()
+	means = means.tolist()
+	return means
 
 def interval5_stats(window):
 	pos_max = np.argmax(window)
@@ -380,6 +417,57 @@ def interval10_stats_nmnsnk(window):
 		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.std(intervals[i])]
 	return values
 
+
+def interval10_maxminrms(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(10):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), signal_rms(intervals[i])]
+	return values
+
+def interval10_maxminstd(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(10):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.std(intervals[i])]
+	return values
+
+def interval10_stats_nmnsnknmin(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(10):
+		values = values + [np.max(intervals[i]), np.std(intervals[i])]
+	return values
 
 def interval3_stats(window):
 	intervals = []
@@ -488,6 +576,30 @@ def i10statsnmnsnk_lrstd(window):
 	values = leftright_std(window) + interval10_stats_nmnsnk(window)
 	return values
 
+def i10maxminrms_lrrms(window):
+	values = leftright_rms(window) + interval10_maxminrms(window)
+	return values
+
+def i10maxminstd_lrrmsstd(window):
+	values = leftright_std_rms(window) + interval10_maxminstd(window)
+	return values
+
+def i10statsnmnsnknmin_lrstd(window):
+	values = leftright_std(window) + interval10_stats_nmnsnknmin(window)
+	return values
+
+def i10statsnmnsnknmin_lrstd_lrnper5(window):
+	values = leftright_std(window) + interval10_stats_nmnsnknmin(window) + n_per_5intervals_lr_norm(window)
+	return values
+
+def i10statsnmnsnk_lrstd_lrnper5(window):
+	values = leftright_std(window) + interval10_stats_nmnsnk(window) + n_per_5intervals_lr_norm(window)
+	return values
+
+def i10statsnmnsnk_lrstd_lrmeanper5(window):
+	values = leftright_std(window) + interval10_stats_nmnsnk(window) + mean_per_5intervals_lr_norm(window)
+	return values
+
 def i10statsnm_lrstatsnm(window):
 	values = leftright_stats_nomean(window) + interval10_stats_nomean(window)
 	return values
@@ -536,6 +648,36 @@ def leftright_std(window):
 	else:
 		print('error lens windows left and right+++++++++++++++++++++')
 	return values
+
+def leftright_std_rms(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.std(left_window), signal_rms(left_window), np.std(right_window), signal_rms(right_window)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [0., 0., np.std(right_window), signal_rms(right_window)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.std(left_window), signal_rms(left_window), 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+	
+def leftright_rms(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [signal_rms(left_window), signal_rms(right_window)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [0., signal_rms(right_window)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [signal_rms(left_window), 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
 # def n_per_10intervals_corr1(data, interval):
 	# divisions = 10
 	# data = sorted(data)
@@ -579,7 +721,70 @@ def leftright_std(window):
 	# else:
 		# print('error lens windows left and right+++++++++++++++++++++')
 	# return values
-	
+
+def n_per_5intervals_lr_norm(data):
+	divisions = 5
+	interval = [int(np.min(data)), np.ceil(np.max(data))]
+	window = data
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = n_per_intervals(left_window, interval, divisions) + n_per_intervals(right_window, interval, divisions)
+		
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = np.zeros(divisions).tolist() + n_per_intervals(right_window, interval, divisions)
+
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = n_per_intervals(left_window, interval, divisions) + np.zeros(divisions).tolist()
+
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
+def mean_per_5intervals_lr_norm(data):
+	divisions = 5
+	interval = [int(np.min(data)), np.ceil(np.max(data))]
+	window = data
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = mean_5perinterval(left_window, interval) + mean_5perinterval(right_window, interval)
+		
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = np.zeros(divisions).tolist() + mean_5perinterval(right_window, interval)
+
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = mean_5perinterval(left_window, interval) + np.zeros(divisions).tolist()
+
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
+def n_per_5intervals_lr_norm(data):
+	divisions = 5
+	interval = [int(np.min(data)), np.ceil(np.max(data))]
+	window = data
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = n_per_intervals(left_window, interval, divisions) + n_per_intervals(right_window, interval, divisions)
+		
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = np.zeros(divisions).tolist() + n_per_intervals(right_window, interval, divisions)
+
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = n_per_intervals(left_window, interval, divisions) + np.zeros(divisions).tolist()
+
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
+	return values
+
 def n_per_intervals_left_right(data, interval, divisions):
 	window = data
 	pos_max = np.argmax(window)

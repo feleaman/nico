@@ -216,6 +216,20 @@ def main(argv):
 					values = current_window
 				elif config['features'] == 'i10statsnmnsnk_lrstd':
 					values = i10statsnmnsnk_lrstd(current_window)
+				elif config['features'] == 'i10statsnmnsnknmin_lrstd':
+					values = i10statsnmnsnknmin_lrstd(current_window)
+				elif config['features'] == 'i10maxminrms_lrrms':
+					values = i10maxminrms_lrrms(current_window)
+				elif config['features'] == 'i10maxminstd_lrrmsstd':
+					values = i10maxminstd_lrrmsstd(current_window)
+				elif config['features'] == 'i10statsnmnsnknmin_lrstd_lrnper5':
+					values = i10statsnmnsnknmin_lrstd_lrnper5(current_window)
+				elif config['features'] == 'i10statsnmnsnk_lrstd_lrmeanper5':
+					values = i10statsnmnsnk_lrstd_lrmeanper5(current_window)
+				elif config['features'] == 'i10statsnmnsnk_lrstd_lrnper5':
+					values = i10statsnmnsnk_lrstd_lrnper5(current_window)
+				
+
 				else:
 					print('error name features')
 					sys.exit()
