@@ -98,8 +98,12 @@ def diff_signal_eq(x, length_diff):
 	
 	
 	
-	print(length_diff)
-	dx_eq = np.interp(t_signal, t_diff, dx)	
+	# print(length_diff)
+	# print(len(dx))
+	dx_eq = np.interp(t_signal, t_diff, dx)
+	# print(len(dx_eq))
+	# print(len(x))
+	# a = input('pause--')
 	return dx_eq
 	
 def deriv_signal_eq(x, fs, length_diff):
@@ -128,7 +132,8 @@ def max_2power(n_x):
 	power2 = count
 	return power2
 
-def signal_processing(x, processing):
+def signal_processing(x, config):
+	processing = config['processing']
 	if processing == 'demod_hilbert':
 		x = hilbert_demodulation(x)
 	elif processing == 'times_demod_hilbert':
@@ -137,6 +142,8 @@ def signal_processing(x, processing):
 		x = x**2.0
 	elif processing == 'df_log':
 		x = np.log10(1. + np.absolute(x))
+	elif processing == 'butter_demod':
+		x = butter_demodulation(x=x, fs=config['fs'], filter=config['demod_filter'], prefilter=config['demod_prefilter'], type_rect=config['demod_rect'], dc_value=config['demod_dc'])
 	else:
 		print('unknown processing')
 		sys.exit()

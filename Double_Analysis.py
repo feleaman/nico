@@ -125,16 +125,21 @@ tr = n_points*dt
 t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
+config_analysis = {'WFM':True, 'WFMzoom':False,  'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
+'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':True}
+
+config_norm = {'analysis':True, 'type':'rms'}
+
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
 
 config_autocorr = {'analysis':False, 'type':'wiener', 'mode':'same'}
 
+
+
 config_diff = {'analysis':False, 'length':1, 'same':True}
 
-config_demod = {'analysis':True, 'mode':'hilbert', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
+config_demod = {'analysis':False, 'mode':'hilbert', 'prefilter':['bandpass',[180.0e3, 350.0e3], 3], 
 'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 500.0, 3], 'warm_points':20000}
 #When hilbert is selected, the other parameters are ignored
 
@@ -160,11 +165,24 @@ ax[1].set_ylabel('Amplitude')
 ax[1].set_xlabel('Time s')
 
 
-# print(signal_rms(x1))
-# print(signal_rms(x2))
+print(signal_rms(x1))
+print(signal_rms(x2))
 # sys.exit()
 
+
+
 #Filter
+if config_norm['analysis'] == True:
+	print('+++ normalization')
+	if config_norm['type'] == 'rms':
+		x1 = x1 / signal_rms(x1)
+		x2 = x2 / signal_rms(x2)
+	else:
+		print('unknown norm type')
+	print('new rms')
+	print(signal_rms(x1))
+	print(signal_rms(x2))
+
 if config_filter['analysis'] == True:
 	print('+++Filter:')
 	if config_filter['type'] == 'bandpass':
@@ -309,14 +327,41 @@ for element in config_analysis:
 			# x1 = np.interp(t, tx, x1)
 			ax[0].plot(t, x1)
 			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
-			ax[0].set_title('Faulty Train Signal: 1500RPM / 80% Load', fontsize=10)
+			ax[0].set_title('Faulty Case Train Signal: 1500RPM / 80% Load', fontsize=10)
 			ax[0].set_ylabel('Amplitude')
 
 			ax[1].plot(t, x2)
 			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
-			ax[1].set_title('Healthy Train Signal: 1500RPM / 80% Load', fontsize=10)
+			ax[1].set_title('Healthy Case Train Signal: 1500RPM / 80% Load', fontsize=10)
 			ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Time s')
+		
+		elif element == 'WFMzoom':
+			fig[count], ax = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+			# tx = np.linspace(0, t[len(t)-1], len(x1))
+			# x1 = np.interp(t, tx, x1)
+			ax[0][0].plot(t, x1)
+			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+			ax[0][0].set_title('Faulty Train Signal: 1500RPM / 80% Load', fontsize=10)
+			ax[0][0].set_ylabel('Amplitude')
+
+			ax[1][0].plot(t, x2)
+			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			ax[1][0].set_title('Healthy Train Signal: 1500RPM / 80% Load', fontsize=10)
+			ax[1][0].set_ylabel('Amplitude')
+			ax[1][0].set_xlabel('Time s')
+			
+			ax[0][1].plot(t, x1)
+			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
+
+			ax[0][1].set_title('Faulty Train Signal: 1500RPM / 80% Load', fontsize=10)
+			ax[0][1].set_ylabel('Amplitude')
+
+			ax[1][1].plot(t, x2)
+			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
+			ax[1][1].set_title('Healthy Train Signal: 1500RPM / 80% Load', fontsize=10)
+			ax[1][1].set_ylabel('Amplitude')
+			ax[1][1].set_xlabel('Time s')
 
 		elif element == 'FFT':		
 			fig[count], ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
@@ -483,17 +528,32 @@ for element in config_analysis:
 			
 			map.append(ax[0].pcolormesh(a_CyclicSpectrum1, f_CyclicSpectrum1/fact, CyclicSpectrum1, cmap='Purples', vmax=vmax))
 
-			ax[0].set_title(filename1)
+			name1 = 'Faulty Case Traininig Signal: '
+			name2 = 'Healthy Case Traininig Signal: '
+			flag = filename1.find('1500')
+			if flag != -1:
+				flag2 = filename1.find('80')
+				if flag2 != -1:
+					name1 = name1 + '1500RPM / 80% Load'
+					name2 = name2 + '1500RPM / 80% Load'
+				else:
+					name1 = name1 + '1500RPM / 40% Load'
+					name2 = name2 + '1500RPM / 40% Load'
+			else:
+				name1 = name1 + '1000RPM / 80% Load'
+				name2 = name2 + '1000RPM / 80% Load'
+			ax[0].set_title(name1, fontsize=10)
+			# ax[0].set_title(filename1)
 			ax[0].set_ylabel(yscalename)
-			ax[0].set_xlabel('Cyclic Frequency Hz')
+			# ax[0].set_xlabel('Cyclic Frequency Hz')
 			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
 				ax[0].set_ylim((0, config_demod['filter'][1]))
-			for tik in ax[0].get_xticklabels():
-				tik.set_visible(True)
+			# for tik in ax[0].get_xticklabels():
+				# tik.set_visible(True)
 
 			
 			map.append(ax[1].pcolormesh(a_CyclicSpectrum2, f_CyclicSpectrum2/fact, CyclicSpectrum2, cmap='Purples', vmax=vmax))
-			ax[1].set_title(filename2)
+			ax[1].set_title(name2, fontsize=10)
 			ax[1].set_ylabel(yscalename)
 			ax[1].set_xlabel('Cyclic Frequency Hz')
 			if (config_demod['analysis'] == True and config_demod['mode'] == 'butter' and config_diff['analysis'] == False):
@@ -505,6 +565,7 @@ for element in config_analysis:
 				
 			indmax = np.argmax([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2)])
 			fig[count].colorbar(map[indmax], ax=ax.ravel().tolist())
+			
 			
 
 		count = count + 1
