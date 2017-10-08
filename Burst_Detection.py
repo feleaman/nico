@@ -36,8 +36,8 @@ Inputs = ['channel', 'fs', 'power2', 'method', 'n_files', 'save']
 Opt_Input = {'files':None, 'window_time':0.001, 'overlap':0, 'data_norm':None, 'clf_files':None, 'clf_check':'OFF', 'plot':'ON'}
 Opt_Input_analysis = {'EMD':'OFF', 'denois':'OFF', 'med_kernel':3, 'processing':'OFF', 'demod_filter':None, 'demod_prefilter':None, 'demod_rect':None, 'demod_dc':None, 'diff':'OFF'}
 Opt_Input_thr = {'thr_mode':'factor_rms', 'thr_value':1}
-Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':100, 'diff_points':1, 'window_extend':0}
-Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard', 'class2':0}
+Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':100, 'window_extend':0}
+Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard', 'class2':None, 'classes':None}
 Opt_Input_dfp = {'pv_removal':[0.01, 1.0, 4]}
 
 
@@ -176,9 +176,9 @@ def burst_detector(x1, config, count=None):
 			# sys.exit()
 		print(clf_pickle1['filename'])
 		print(config['filename'])
-		if clf_pickle1['filename'] != config['filename']:
-			print('error filename 1')
-			sys.exit()
+		# if clf_pickle1['filename'] != config['filename']:
+			# print('error filename 1')
+			# sys.exit()
 	else:
 		print('without clf check')
 		clf_1 = None
@@ -255,6 +255,17 @@ def burst_detector(x1, config, count=None):
 			print('env thr must have processing')
 
 	#++++++++++++++++++++++SIGNAL PROCESSING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	if config['data_norm'] == 'per_signal':
+		x1 = x1 / np.max(np.absolute(x1))
+		print('Normalization per signal')
+	elif config['data_norm'] == 'per_rms':
+		x1 = x1 / signal_rms(x1)
+		print('Normalization per rms')
+	
+	
+	
+	
+	
 	if config['denois'] != 'OFF':
 		print('with denois')
 		x1 = signal_denois(x=x1, denois=config['denois'], med_kernel=config['med_kernel'])
@@ -270,6 +281,8 @@ def burst_detector(x1, config, count=None):
 	if config['diff'] != 'OFF':
 		print('with diff')
 		x1 = diff_signal_eq(x1, config['diff'])
+	
+	
 	#Filter
 	# if config_filter['analysis'] == True:
 		# print('+++Filter:')
@@ -343,12 +356,12 @@ def burst_detector(x1, config, count=None):
 	Results = {'POS':0, 'NEG':0, 'FP':0, 'TP':0, 'TN':0, 'FN':0}
 
 	if config['method'] != None:
-		if config['data_norm'] == 'per_signal':
-			x1 = x1 / np.max(np.absolute(x1))
-			print('Normalization per signal')
-		elif config['data_norm'] == 'per_rms':
-			x1 = x1 / signal_rms(x1)
-			print('Normalization per rms')
+		# if config['data_norm'] == 'per_signal':
+			# x1 = x1 / np.max(np.absolute(x1))
+			# print('Normalization per signal')
+		# elif config['data_norm'] == 'per_rms':
+			# x1 = x1 / signal_rms(x1)
+			# print('Normalization per rms')
 		
 		
 		if (config['method'] == 'THR' or config['method'] == 'ENVTHR'):
@@ -466,6 +479,14 @@ def burst_detector(x1, config, count=None):
 					values = i10statsnmnsnk_lrstd_lrmeanper5(window1)
 				elif config['features'] == 'i10statsnmnsnk_lrstd_lrnper5':
 					values = i10statsnmnsnk_lrstd_lrnper5(window1)
+				elif config['features'] == 'i10statsnmnsnk_lrstd_std50max':
+					values = i10statsnmnsnk_lrstd_std50max(window1)
+				elif config['features'] == 'i10statsnsnk_lrstd':
+					values = i10statsnsnk_lrstd(window1)
+				elif config['features'] == 'i10statsnsnk_lrstdmean':
+					values = i10statsnsnk_lrstdmean(window1)
+				elif config['features'] == 'Data':
+					values = window1
 					
 					
 				else:
@@ -485,29 +506,62 @@ def burst_detector(x1, config, count=None):
 				
 				features_fault.append(values)
 				prediction = clf.predict(values)
+				if config['classes'] == '2n_2noclass':
+					print(prediction[0])
+					if (prediction[0][0] == 0 and prediction[0][1] == 1):
+						guess = 0
+					elif (prediction[0][0] == 1 and prediction[0][1] == 0):
+						guess = 1
+					else:
+						guess = 0
+						# print('error 467')
+						# plt.plot(window1)
+						# plt.show()
+						# sys.exit()
+				elif config['classes'] == '3n_2isclass':
+					if (prediction[0][0] == 0 and prediction[0][1] == 0 and prediction[0][2] == 1):
+						guess = 0
+					elif (prediction[0][0] == 1 and prediction[0][1] == 0 and prediction[0][2] == 0):
+						guess = 1
+					elif (prediction[0][0] == 0 and prediction[0][1] == 1 and prediction[0][2] == 0):
+						guess = 2
+					else:
+						print('warning 497')
+						print(prediction[0])
+						print(numero)
+						guess = 0
+						# sys.exit()
+				elif config['classes'] == '1n_2isclass':
+					guess = prediction[0]
+				elif config['classes'] == '1n_2noclass':
+					guess = prediction[0]
+				else:
+					print('error 888')
+					sys.exit()
+				
 				
 				if config['clf_check'] == 'ON':
-					if prediction[0] == 2:
-						prediction[0] = config['class2']
+					if guess == 2:
+						guess = config['class2']
 					if clf_1[numero] == 2:
 						clf_1[numero] = config['class2']
 					
 					if clf_1[numero] == 0:
 						Results['NEG'] = Results['NEG'] + 1
-						if prediction[0] == clf_1[numero]:
+						if guess == clf_1[numero]:
 							Results['TN'] = Results['TN'] + 1
 						else:
 							Results['FP'] = Results['FP'] + 1
 					elif clf_1[numero] == 1:
 						Results['POS'] = Results['POS'] + 1
-						if prediction[0] == clf_1[numero]:
+						if guess == clf_1[numero]:
 							Results['TP'] = Results['TP'] + 1
 						else:
 							Results['FN'] = Results['FN'] + 1
 				else:
 					print('without check')
 
-				Predictions1.append(prediction[0])
+				Predictions1.append(guess)
 
 				numero = numero + 1
 				
@@ -552,12 +606,16 @@ def burst_detector(x1, config, count=None):
 			
 			
 			if config['clf_check'] == 'ON':
+				# print(t_burst_corr1)
+				# aaa = input('up t_burst_corr1.....')
 
-				tWindows = []
-				window_points = int(config['window_time']*config['fs'])
-				n_windows = int(n_points/window_points)
-				for count in range(n_windows):
-					tWindows.append(t[count*window_points:(count+1)*window_points])
+				# tWindows = []
+				# window_points = int(config['window_time']*config['fs'])
+				# n_windows = int(n_points/window_points)
+				# for count in range(n_windows):
+					# tWindows.append(t[count*window_points:(count+1)*window_points])
+				# config_overlap
+				tWindows = prepare_windows(t, config)
 				
 				if config['overlap'] == 0:
 					count = 0
@@ -592,11 +650,17 @@ def burst_detector(x1, config, count=None):
 					config_overlap = config
 					config_overlap['overlap'] = 0
 					tWindows = prepare_windows(t, config_overlap)
-				
+
 					contador = 0
 					Results['NEG'] = Results['NEG'] + 1
 					Results['TN'] = Results['TN'] + 1
+
+					
+					
+					
+					
 					for k in range(len(tWindows)-1):
+
 
 						contador = contador + 1
 						flag = 'OFF'
@@ -608,13 +672,11 @@ def burst_detector(x1, config, count=None):
 						if clf_1[k] == 0:
 							Results['NEG'] = Results['NEG'] + 1
 							for time_burst in t_burst_corr1:
-								if (time_burst in tWindows[k]):
-									print(time_burst)
-									a = input('pause11119438576')
+								vec = [str(tWindows[k][indi]) for indi in range(len(tWindows[k]))]
+								if (str(time_burst) in vec):
 									
 									if clf_1[k+1] == 0:
 										Results['FP'] = Results['FP'] + 1
-										# print('++++++++++++FP in ', time_burst)
 										flag = 'ON'
 									elif clf_1[k+1] == 1:
 										Results['TP'] = Results['TP'] + 1
@@ -631,10 +693,9 @@ def burst_detector(x1, config, count=None):
 						elif clf_1[k] == 1:
 							Results['POS'] = Results['POS'] + 1
 							for time_burst in t_burst_corr1:
-								if time_burst in tWindows[k]:
-									print(time_burst)
-									a = input('jajajajaaja pausa')
-									# print(time_burst)
+								vec = [str(tWindows[k][indi]) for indi in range(len(tWindows[k]))]
+								if str(time_burst) in vec:
+
 									Results['TP'] = Results['TP'] + 1
 									print('++++++++++++TP in ', time_burst)
 									flag = 'ON'
@@ -645,7 +706,6 @@ def burst_detector(x1, config, count=None):
 							sys.exit()
 						count = count + 1
 						
-					# x1 = RMSs
 					if clf_1[contador] == 2:
 						clf_1[contador] = config['class2']
 				
@@ -663,52 +723,22 @@ def burst_detector(x1, config, count=None):
 		
 		elif config['method'] == 'DFP':
 			x1 = np.log10(1. + np.absolute(x1))
-			# # df_x = x1
-			# plt.figure(0)
-			# plt.plot(x1)
-			
-
-			
+	
 			
 			locs = dfp_alg2(x1)
 
-			
-			# plt.figure(1)
-			# plt.plot(df_x)
+
 			level_ini = config['pv_removal'][0]
 			level_fin = config['pv_removal'][1]
 			steps = config['pv_removal'][2]
 			locs = dfp_alg3(x1, locs, level_ini, level_fin, steps)
-			# level = 0.1
-			# for i in range(len(locs)):
-				# if (locs[i] == 1 or locs[i] == -1):
-					# flag = False
-					# count = 0
-					# while flag == False:
-						# count = count + 1
-						# if i+count >= len(locs):
-							# break
-						# if (locs[i+count] == 1 or locs[i+count] == -1):
-							# flag = True
-					# if flag == True:
-						# dif  = np.absolute(df_x[i+count] - df_x[i])
-						# if dif < level:
-							# locs[i] = 0
-							# locs[i+count] = 0
 			
 			
 			for i in range(len(x1)):
 				if locs[i] == 0:
 					x1[i] = 0
 			
-			
-			# plt.figure(1)
-			# plt.plot(x1)
-					
-					
-			
-			
-			# plt.show()
+
 			
 			threshold1 = config['thr_value']
 			n_burst_corr1, t_burst_corr1, amp_burst_corr1, t_burst1, amp_burst1 = id_burst_threshold(x=x1, fs=config['fs'], threshold=threshold1, t_window=config['window_time'])
@@ -716,11 +746,7 @@ def burst_detector(x1, config, count=None):
 			
 			if config['clf_check'] == 'ON':
 				tWindows = prepare_windows(t, config)
-				# tWindows = []
-				# window_points = int(config['window_time']*config['fs'])
-				# n_windows = int(n_points/window_points)
-				# for count in range(n_windows):
-					# tWindows.append(t[count*window_points:(count+1)*window_points])
+
 				
 				count = 0
 				for twindow in tWindows:
@@ -836,9 +862,11 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	config_input['n_files'] = int(config_input['n_files'])
 	config_input['power2'] = int(config_input['power2'])
 	config_input['warm_points'] = int(config_input['warm_points'])
-	config_input['diff_points'] = int(config_input['diff_points'])
+	# config_input['diff_points'] = int(config_input['diff_points'])
 	config_input['class2'] = int(config_input['class2'])
 	config_input['med_kernel'] = int(config_input['med_kernel'])
+	if config_input['diff'] != 'OFF':
+		config_input['diff'] = int(config_input['diff'])
 	
 	# Variable conversion
 	config_input['pv_removal'] = [float(config_input['pv_removal'][0]), float(config_input['pv_removal'][1]), int(config_input['pv_removal'][2])]
@@ -852,8 +880,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 			sys.exit()
 	if config_input['demod_filter'] != None:
 		config_input['demod_filter'] = [config_input['demod_filter'][0], float(config_input['demod_filter'][1]), float(config_input['demod_filter'][2])]
-	if config_input['diff'] != 'OFF':
-		config_input['diff'] = float(config_input['diff'])
+	
 
 
 	return config_input

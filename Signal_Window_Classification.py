@@ -314,7 +314,7 @@ print(filename1)
 
 
 config_analysis = {'WindowTime':0.001, 'Overlap':False, 'WindowAdvance':0, 'savepik':True, 'power2':args.power2,
-'channel':args.channel, 'start_in':0}
+'channel':args.channel, 'start_in':0.0005}
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}###
 
