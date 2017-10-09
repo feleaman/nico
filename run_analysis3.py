@@ -1,9 +1,66 @@
 import os
 import sys
-# os.system('')
-# os.system('python EmpMD.py --path --file_x --channel --power2 --save --file_h1  --min_iter')
 
-os.system('cd C:\\Felix\\Code\\nico')
+
+os.system('cd C:\\code\\nico')
+
+
+# # +++++++++++VALID 1500 80
+# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\Fault\\valid_1500_80_fault.txt C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\OK\\valid_1500_80_ok.txt --clf_files C:\\work\Burst_Detection\\Data\\Validation_Case\\1500_80\\Fault\\classification_20170921_103023_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\OK\\classification_20170922_094233_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.3 --overlap 0')	
+
+# a = input('press enter to continue . . . ')
+# #+++++++++++VALID 1000 80
+# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\Fault\\valid_1000_80_fault.txt C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\OK\\valid_1000_80_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\Fault\\classification_20170921_131001_V1_8_n1000_M80_AE_Signal_20160928_144217.pkl C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\OK\\classification_20170922_094309_V1_8_n1000_M80_AE_Signal_20160506_141822.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.3 --overlap 0')	
+# 
+import pickle
+def read_pickle(pickle_name):
+	pik = open(pickle_name, 'rb')
+	pickle_data = pickle.load(pik)
+	return pickle_data
+
+from tkinter import filedialog
+from tkinter import Tk
+root = Tk()
+root.withdraw()
+root.update()
+filename = filedialog.askopenfilename()
+root.destroy()
+
+pik = read_pickle(filename)
+print(pik)
+sys.exit()
+
+# +++++++++++TEST 1500 80
+os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_80\\Fault\\test_1500_80_fault.txt C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_80\\OK\\test_1500_80_ok.txt --clf_files C:\\work\Burst_Detection\\Data\\Test_Case\\1500_80\\Fault\\classification_20170922_134842_V2_9_n1500_M80_AE_Signal_20160928_151441.pkl C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_80\\OK\\classification_20170925_164839_V2_9_n1500_M80_AE_Signal_20160506_145215.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot OFF --rms_change 0.5 --overlap 0')	
+
+a = input('press enter to continue . . . ')
+#+++++++++++TEST 1000 80
+os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\Fault\\test_1000_80_fault.txt C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\OK\\test_1000_80_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\Fault\\classification_20170922_122221_V2_8_n1000_M80_AE_Signal_20160928_151108.pkl C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\OK\\classification_20170922_122316_V2_8_n1000_M80_AE_Signal_20160506_144637.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot OFF --rms_change 0.5 --overlap 0')	
+
+a = input('press enter to continue . . . ')
+#+++++++++++TEST 1500 40
+os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\Fault\\test_1500_40_fault.txt C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\OK\\test_1500_40_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\Fault\\classification_20170921_151654_V1_6_n1500_M40_AE_Signal_20160928_143502.pkl C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\OK\\classification_20170925_164917_V1_6_n1500_M40_AE_Signal_20160506_140849.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot OFF --rms_change 0.5 --overlap 0')	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sys.exit()
 # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --layers 25 --classifications C:/code/nico1/classification_20170923_061144_ok_v3_n1500_m80.pkl --files C:/code/nico1/ok_v3_n1500_m80.txt --features interval10_stats_nomean')
 
 # #+++++++++++TRAIN
@@ -20,6 +77,8 @@ os.system('cd C:\\Felix\\Code\\nico')
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++MANUAL
 
 # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features i10statsnmnsnk_lrstd --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation tanh --rs 1 --data_norm per_rms --alpha 1.e-1 --solver adam --layers 300 --processing demod_hilbert --eval_features OFF')
+
+
 
 
 # +++++++++++VALID 1500 80

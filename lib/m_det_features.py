@@ -417,6 +417,30 @@ def interval10_stats_nmnsnk(window):
 		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.std(intervals[i])]
 	return values
 
+	
+def interval10_stats_nsnk(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(10):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
+	return values
+
+def std50max(window):
+	window = sorted(window)
+	window.reverse()
+	values = [np.std(window[0:50])]
+	
+	return values
 
 def interval10_maxminrms(window):
 	intervals = []
@@ -576,6 +600,19 @@ def i10statsnmnsnk_lrstd(window):
 	values = leftright_std(window) + interval10_stats_nmnsnk(window)
 	return values
 
+def i10statsnmnsnk_lrstd_std50max(window):
+	values = std50max(window) + leftright_std(window) + interval10_stats_nmnsnk(window)
+	return values
+
+
+def i10statsnsnk_lrstd(window):
+	values = leftright_std(window) + interval10_stats_nsnk(window)
+	return values
+
+def i10statsnsnk_lrstdmean(window):
+	values = leftright_stdmean(window) + interval10_stats_nsnk(window)
+	return values
+
 def i10maxminrms_lrrms(window):
 	values = leftright_rms(window) + interval10_maxminrms(window)
 	return values
@@ -632,6 +669,21 @@ def dif_interval10_stats_nomean(window):
 	values = []
 	for i in range(9):
 		values = values + [np.max(intervals[i+1])-np.max(intervals[i]), np.min(intervals[i+1])-np.min(intervals[i]), np.std(intervals[i+1])-np.std(intervals[i]), stats.skew(np.array(intervals[i+1]), bias=False)-stats.skew(np.array(intervals[i]), bias=False), stats.kurtosis(np.array(intervals[i+1]), fisher=False, bias=False)-stats.kurtosis(np.array(intervals[i]), fisher=False, bias=False)]
+	return values
+
+def leftright_stdmean(window):
+	pos_max = np.argmax(window)
+	left_window = window[0:pos_max]
+	right_window = window[pos_max:]
+
+	if (len(left_window) != 0 and len(right_window) != 0):
+		values = [np.std(left_window), np.std(right_window), np.mean(left_window), np.mean(right_window)]
+	elif (len(left_window) == 0 and len(right_window) != 0):
+		values = [0., 0., np.std(right_window), np.mean(right_window)]
+	elif (len(left_window) != 0 and len(right_window) == 0):
+		values = [np.mean(left_window), np.std(left_window), 0., 0.]
+	else:
+		print('error lens windows left and right+++++++++++++++++++++')
 	return values
 
 def leftright_std(window):

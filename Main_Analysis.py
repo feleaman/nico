@@ -117,7 +117,7 @@ t = np.array([i*dt for i in range(n)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False, 'Cepstrum':False}
+config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False, 'Cepstrum':False}
 
 config_demod = {'analysis':False, 'mode':'hilbert', 'prefilter':['highpass', 60.0e3, 3], 
 'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 50.0, 3]}
