@@ -171,14 +171,14 @@ def burst_detector(x1, config, count=None):
 		# print(clf_pickle1)
 		# sys.exit()
 		clf_1 = clf_pickle1['classification']
-		# if clf_pickle1['config_analysis']['WindowTime'] != config_neuronal['WindowTime']:
+		# if clf_pickle1['config_analysis']['WindowTime'] != config['WindowTime']:
 			# print('error window time')
 			# sys.exit()
 		print(clf_pickle1['filename'])
 		print(config['filename'])
-		# if clf_pickle1['filename'] != config['filename']:
-			# print('error filename 1')
-			# sys.exit()
+		if clf_pickle1['filename'] != config['filename']:
+			print('error filename 1')
+			sys.exit()
 	else:
 		print('without clf check')
 		clf_1 = None
@@ -240,6 +240,9 @@ def burst_detector(x1, config, count=None):
 		if config['processing'] != config_model['processing']:
 			print('error processing model NN')
 			sys.exit()
+		if config['diff'] != config_model['diff']:
+			print('error diff model NN')
+			sys.exit()
 		# print(config_model['denois'])
 		# a = input('pause....')
 		if config_model['denois'] == 'median':
@@ -251,8 +254,9 @@ def burst_detector(x1, config, count=None):
 			sys.exit()
 	if config['method'] == 'ENVTHR':
 		if config['processing'] == 'OFF':
-			sys.exit()
 			print('env thr must have processing')
+			sys.exit()
+			
 
 	#++++++++++++++++++++++SIGNAL PROCESSING +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	if config['data_norm'] == 'per_signal':
@@ -487,6 +491,16 @@ def burst_detector(x1, config, count=None):
 					values = i10statsnsnk_lrstdmean(window1)
 				elif config['features'] == 'Data':
 					values = window1
+				elif config['features'] == 'DataSorted':
+					values = sorted(window1)
+				elif config['features'] == 'sortint20_stats_nsnk':
+					values = sortint20_stats_nsnk(window1)
+				elif config['features'] == 'int20_stats_nsnk':
+					values = int20_stats_nsnk(window1)
+				elif config['features'] == 'sortint10_stats_nsnk':
+					values = sortint10_stats_nsnk(window1)
+				elif config['features'] == 'si20statsnsnk_LRstdmean':
+					values = si20statsnsnk_LRstdmean(window1)
 					
 					
 				else:
@@ -884,7 +898,8 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 
 
 	return config_input
-
+	
+#Signal RAW
 def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None):
 	if name != None:
 		name = name + ' '
@@ -903,7 +918,7 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		ax[nax].plot(t_burst_corr1, amp_burst_corr1/signal_rms(x1), 'ro')
 	elif (config['method'] == 'NN' or config['method'] == 'WIN'):
 		for i in range(len(t_burst_corr1)):
-			# ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='r', alpha=0.5)
+			# ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='r', alpha=0.4)
 			ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 	if clf != None:
 		print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -915,7 +930,7 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		print(len(ind_w_positives))
 		print(len(clf))
 		for i in range(len(ind_w_positives)):
-			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.5)
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.4)
 	
 	if nax == 0:
 		name = 'Faulty Case Test Signal: '
@@ -941,6 +956,7 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 	# ax[nax].set_ylabel('Amplitude')
 	return
 
+#Signal processed
 def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None):
 	if name != None:
 		name = name + ' '
@@ -965,11 +981,12 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 	if (config['method'] == 'THR' or config['method'] == 'DFP' or config['method'] == 'ENVTHR'):
 		if thr == True:
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
-			ax[nax].axhline(threshold1, color='k')		
+			ax[nax].axhline(threshold1, color='k')
 		ax[nax].plot(t_burst_corr1, amp_burst_corr1, 'ro')
 	elif config['method'] == 'NN' or config['method'] == 'WIN':
 		for i in range(len(t_burst_corr1)):
-			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=(t_burst_corr1[i]+config['window_time']), facecolor='r', alpha=0.5)
+			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=(t_burst_corr1[i]+config['window_time']), facecolor='r', alpha=0.4)
+			ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 			# ax[nax].plot(t_burst_corr1[i], amp_burst_corr1[i], 'ro')
 	if clf != None:
 		for k in range(len(clf)):
@@ -980,7 +997,7 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		# print(len(ind_w_positives))
 		# print(len(clf))
 		for i in range(len(ind_w_positives)):
-			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='b', alpha=0.5)
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.4)
 		
 	if nax == 0:
 		name = 'Faulty Case Test Signal: '
@@ -998,7 +1015,12 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		name = name + '1000RPM / 80% Load'
 	ax[nax].set_title(name, fontsize=10)
 	# ax[nax].set_ylabel('Amplitude')
-	ax[nax].set_ylabel('DF Amplitude')
+	if config['method'] == 'ANN' or config['method'] == 'ENV':
+		ax[nax].set_ylabel('Diff. Envelope')
+	elif config['method'] == 'DFP':
+		ax[nax].set_ylabel('Peaks in Det. Funct.')
+	else:
+		ax[nax].set_ylabel('Norm. Amplitude')
 	return
 
 def read_threshold(mode, value, x1=None):

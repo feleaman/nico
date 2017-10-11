@@ -417,6 +417,22 @@ def interval10_stats_nmnsnk(window):
 		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.std(intervals[i])]
 	return values
 
+def sortint10_stats_nsnk(window):
+	intervals = []
+	intervals.append(window[0:100])
+	intervals.append(window[100:200])
+	intervals.append(window[200:300])
+	intervals.append(window[300:400])
+	intervals.append(window[400:500])
+	intervals.append(window[500:600])
+	intervals.append(window[600:700])
+	intervals.append(window[700:800])
+	intervals.append(window[800:900])
+	intervals.append(window[900:1000])
+	values = []
+	for i in range(10):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.std(intervals[i])]
+	return values
 	
 def interval10_stats_nsnk(window):
 	intervals = []
@@ -432,6 +448,91 @@ def interval10_stats_nsnk(window):
 	intervals.append(window[900:1000])
 	values = []
 	for i in range(10):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
+	values = sorted(values)
+	return values
+
+def sortint20_stats_nsnk(window):
+	intervals = []
+	intervals.append(window[0:50])
+	intervals.append(window[50:100])
+	intervals.append(window[100:150])
+	intervals.append(window[150:200])
+	intervals.append(window[200:250])
+	intervals.append(window[250:300])
+	intervals.append(window[300:350])
+	intervals.append(window[350:400])
+	intervals.append(window[400:450])
+	intervals.append(window[450:500])
+	intervals.append(window[500:550])
+	intervals.append(window[550:600])
+	intervals.append(window[600:650])
+	intervals.append(window[650:700])
+	intervals.append(window[700:750])
+	intervals.append(window[750:800])
+	intervals.append(window[800:850])
+	intervals.append(window[850:900])
+	intervals.append(window[900:950])
+	intervals.append(window[950:1000])
+	values = []
+	for i in range(20):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
+	values = sorted(values)
+	return values
+
+
+def sortint20_stats_nsnk(window):
+	intervals = []
+	intervals.append(window[0:50])
+	intervals.append(window[50:100])
+	intervals.append(window[100:150])
+	intervals.append(window[150:200])
+	intervals.append(window[200:250])
+	intervals.append(window[250:300])
+	intervals.append(window[300:350])
+	intervals.append(window[350:400])
+	intervals.append(window[400:450])
+	intervals.append(window[450:500])
+	intervals.append(window[500:550])
+	intervals.append(window[550:600])
+	intervals.append(window[600:650])
+	intervals.append(window[650:700])
+	intervals.append(window[700:750])
+	intervals.append(window[750:800])
+	intervals.append(window[800:850])
+	intervals.append(window[850:900])
+	intervals.append(window[900:950])
+	intervals.append(window[950:1000])
+	values = []
+	for i in range(20):
+		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
+	values = sorted(values)
+	return values
+
+def int20_stats_nsnk(window):
+	intervals = []
+	intervals.append(window[0:50])
+	intervals.append(window[50:100])
+	intervals.append(window[100:150])
+	intervals.append(window[150:200])
+	intervals.append(window[200:250])
+	intervals.append(window[250:300])
+	intervals.append(window[300:350])
+	intervals.append(window[350:400])
+	intervals.append(window[400:450])
+	intervals.append(window[450:500])
+	intervals.append(window[500:550])
+	intervals.append(window[550:600])
+	intervals.append(window[600:650])
+	intervals.append(window[650:700])
+	intervals.append(window[700:750])
+	intervals.append(window[750:800])
+	intervals.append(window[800:850])
+	intervals.append(window[850:900])
+	intervals.append(window[900:950])
+	intervals.append(window[950:1000])
+	values = []
+	for i in range(20):
 		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
 	return values
 
@@ -619,6 +720,11 @@ def i10maxminrms_lrrms(window):
 
 def i10maxminstd_lrrmsstd(window):
 	values = leftright_std_rms(window) + interval10_maxminstd(window)
+	return values
+
+	
+def si20statsnsnk_LRstdmean(window):
+	values = leftright_stdmean(window) + sortint20_stats_nsnk(window)
 	return values
 
 def i10statsnmnsnknmin_lrstd(window):

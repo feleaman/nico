@@ -40,7 +40,7 @@ plt.rcParams['agg.path.chunksize'] = 1000 #for plotting optimization purposes
 
 Inputs = ['channel', 'save', 'files', 'classifications', 'layers', 'features', 'classes', 'fs', 'class2']
 Inputs_opt = ['window_time', 'overlap', 'data_norm', 'solver', 'alpha', 'rs', 'activation', 'tol', 'max_iter', 'denois', 'EMD', 'med_kernel', 'processing', 'NN_name', 'eval_features', 'learning_rate_init', 'diff', 'demod_prefilter', 'demod_filter', 'demod_rect', 'demod_dc']
-Defaults = [0.001, 0, 'per_signal', 'lbfgs', 1.e-3, 1, 'relu', 1.e-6, 400000, 'OFF', 'OFF', 3, 'OFF', 'auto', 'OFF', 0.001, 'OFF', 'OFF', 'OFF', 'only_positives', 'without_dc']
+Defaults = [0.001, 0, 'per_signal', 'lbfgs', 1.e-3, 1, 'relu', 1.e-6, 400000, 'OFF', 'OFF', 3, 'OFF', 'auto', 'OFF', 0.001, 'OFF', None, None, 'only_positives', 'without_dc']
 
 def main(argv):
 	config = read_parser(argv, Inputs, Inputs_opt, Defaults)
@@ -153,9 +153,9 @@ def main(argv):
 		Filenames.append(filename)
 		print(filename)
 		print(info_classification_pickle['filename'])
-		# if info_classification_pickle['filename'] != filename:
-			# print('Wrong filename!!!')
-			# sys.exit()
+		if info_classification_pickle['filename'] != filename:
+			print('Wrong filename!!!')
+			sys.exit()
 	print('fin')
 	
 	
@@ -256,6 +256,18 @@ def main(argv):
 					values = i10statsnsnk_lrstdmean(current_window)
 				elif config['features'] == 'Data':
 					values = current_window
+				elif config['features'] == 'DataSorted':
+					values = sorted(current_window)
+				elif config['features'] == 'sortint20_stats_nsnk':
+					values = sortint20_stats_nsnk(current_window)
+				elif config['features'] == 'int20_stats_nsnk':
+					values = int20_stats_nsnk(current_window)
+				elif config['features'] == 'sortint10_stats_nsnk':
+					values = sortint10_stats_nsnk(current_window)
+				elif config['features'] == 'si20statsnsnk_LRstdmean':
+					values = si20statsnsnk_LRstdmean(current_window)
+					
+					
 					
 
 				else:

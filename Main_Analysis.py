@@ -104,9 +104,6 @@ x = x[0:n_points]
 	# nemo = n / 2.0**count
 # count = count - 1
 
-np.savetxt('train_1500_fault.txt', x)
-
-sys.exit()
 
 # x = x[0:n] #reduces number of points to a power of 2 to improve speed
 # x = x[0:10000]	
