@@ -2,151 +2,41 @@ import os
 import sys
 
 
-os.system('cd C:\\code\\nico')
+os.system('cd C:\Felix\Code\nico')
 
-
-# # +++++++++++VALID 1500 80
-# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\Fault\\valid_1500_80_fault.txt C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\OK\\valid_1500_80_ok.txt --clf_files C:\\work\Burst_Detection\\Data\\Validation_Case\\1500_80\\Fault\\classification_20170921_103023_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\OK\\classification_20170922_094233_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.3 --overlap 0')	
-
-# a = input('press enter to continue . . . ')
-# #+++++++++++VALID 1000 80
-# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\Fault\\valid_1000_80_fault.txt C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\OK\\valid_1000_80_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\Fault\\classification_20170921_131001_V1_8_n1000_M80_AE_Signal_20160928_144217.pkl C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\OK\\classification_20170922_094309_V1_8_n1000_M80_AE_Signal_20160506_141822.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.3 --overlap 0')	
-# 
-# import pickle
-# def read_pickle(pickle_name):
-	# pik = open(pickle_name, 'rb')
-	# pickle_data = pickle.load(pik)
-	# return pickle_data
-
-# from tkinter import filedialog
-# from tkinter import Tk
-# root = Tk()
-# root.withdraw()
-# root.update()
-# filename = filedialog.askopenfilename()
-# root.destroy()
-
-# pik = read_pickle(filename)
-# print(pik)
-# sys.exit()
-
-# # +++++++++++TEST 1500 80
-# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_80\\Fault\\test_1500_80_fault.txt C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_80\\OK\\test_1500_80_ok.txt --clf_files C:\\work\Burst_Detection\\Data\\Test_Case\\1500_80\\Fault\\classification_20170922_134842_V2_9_n1500_M80_AE_Signal_20160928_151441.pkl C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_80\\OK\\classification_20170925_164839_V2_9_n1500_M80_AE_Signal_20160506_145215.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.5 --overlap 0')	
-
-# a = input('press enter to continue . . . ')
-# #+++++++++++TEST 1000 80
-# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\Fault\\test_1000_80_fault.txt C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\OK\\test_1000_80_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\Fault\\classification_20170922_122221_V2_8_n1000_M80_AE_Signal_20160928_151108.pkl C:\\work\\Burst_Detection\\Data\\Test_Case\\1000_80\\OK\\classification_20170922_122316_V2_8_n1000_M80_AE_Signal_20160506_144637.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.5 --overlap 0')	
-
-# a = input('press enter to continue . . . ')
-# #+++++++++++TEST 1500 40
-# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --n_files 2 --save OFF --files C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\Fault\\test_1500_40_fault.txt C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\OK\\test_1500_40_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\Fault\\classification_20170921_151654_V1_6_n1500_M40_AE_Signal_20160928_143502.pkl C:\\work\\Burst_Detection\\Data\\Test_Case\\1500_40\\OK\\classification_20170925_164917_V1_6_n1500_M40_AE_Signal_20160506_140849.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7.5 --data_norm per_rms --plot ON --rms_change 0.5 --overlap 0')	
-
-
-
-
-# +++++++++++TEST 1500 80
-os.system('python Burst_Detection.py --channel AE_Signal --save OFF --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\Fault\\V2_9_n1500_M80_AE_Signal_20160928_151441.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\OK\\V2_9_n1500_M80_AE_Signal_20160506_145215.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\Fault\\classification_20170922_134842_V2_9_n1500_M80_AE_Signal_20160928_151441.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\OK\\classification_20170925_164839_V2_9_n1500_M80_AE_Signal_20160506_145215.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 0.9 --data_norm per_rms --plot ON --rms_change 0.5 --overlap 0')
-a = input('press enter to continue . . . ')
-
-#+++++++++++TEST 1000 80
-os.system('python Burst_Detection.py --channel AE_Signal --save OFF --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\Fault\\V2_8_n1000_M80_AE_Signal_20160928_151108.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\OK\\V2_8_n1000_M80_AE_Signal_20160506_144637.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\Fault\\classification_20170922_122221_V2_8_n1000_M80_AE_Signal_20160928_151108.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\OK\\classification_20170922_122316_V2_8_n1000_M80_AE_Signal_20160506_144637.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 0.9 --data_norm per_rms --plot ON --rms_change 0.5 --overlap 0')
-a = input('press enter to continue . . . ')
-
-#+++++++++++TEST 1500 40
-os.system('python Burst_Detection.py --channel AE_Signal --save OFF --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\Fault\\V1_6_n1500_M40_AE_Signal_20160928_143502.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\OK\\V1_6_n1500_M40_AE_Signal_20160506_140849.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\Fault\\classification_20170921_151654_V1_6_n1500_M40_AE_Signal_20160928_143502.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\OK\\classification_20170925_164917_V1_6_n1500_M40_AE_Signal_20160506_140849.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 0.9 --data_norm per_rms --plot ON --rms_change 0.5 --overlap 0')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-sys.exit()
-# os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --layers 25 --classifications C:/code/nico1/classification_20170923_061144_ok_v3_n1500_m80.pkl --files C:/code/nico1/ok_v3_n1500_m80.txt --features interval10_stats_nomean')
-
-# #+++++++++++TRAIN
-# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features interval10_stats_nomean --method THR --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20170921_110533_.pkl --data_norm per_signal --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Analysis_Case_1500_80\\Fault\\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Analysis_Case_1500_80\\OK\\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Analysis_Case_1500_80\\Fault\\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Analysis_Case_1500_80\\OK\\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 7 --data_norm per_rms')
-
-
-# Layers = ['100 20', '300', '15', '15 2', '100']
-# 
-
-# for layer in Layers:
 
 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++MANUAL
 
-# os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features i10statsnmnsnk_lrstd --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation tanh --rs 1 --data_norm per_rms --alpha 1.e-1 --solver adam --layers 300 --processing demod_hilbert --eval_features OFF')
+# +++++++++++TRAINING 1500 80
+
+# os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --fs 1.e6 --features sortint20_stats_nsnk --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20171007_155215_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20171007_181945_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation tanh --rs 1 --data_norm per_rms --alpha 1.e2 --solver lbfgs --layers 160 80 20 --processing butter_demod --eval_features OFF --tol 1.e-4 --diff 1 --classes 3n_2isclass --class2 0 --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3')
+
+
+
+# # +++++++++++VALID 1500 80
+# os.system('python Burst_Detection.py --channel AE_Signal --save_plot OFF --fs 1.e6 --power2 20 --features sortint20_stats_nsnk --method NN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171013_160404.pkl --n_files 2 --save OFF --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\Fault\\V3_9_n1500_M80_AE_Signal_20160928_154159.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\OK\\V3_9_n1500_M80_AE_Signal_20160506_152625.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\Fault\\classification_20170921_103023_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\OK\\classification_20170922_094233_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl --clf_check ON --class2 0 --classes 3n_2isclass --data_norm per_rms --processing butter_demod --plot ON --diff 1 --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --thr_mode fixed_value --thr_value 0.008 --window_delay 0')
+
+# a = input('press enter to continue . . . ')
+# #+++++++++++VALID 1000 80
+# os.system('python Burst_Detection.py --channel AE_Signal --save_plot OFF --fs 1.e6 --power2 20 --features sortint20_stats_nsnk --method NN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171013_160404.pkl --n_files 2 --save OFF --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\Fault\\V1_8_n1000_M80_AE_Signal_20160928_144217.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\OK\\V1_8_n1000_M80_AE_Signal_20160506_141822.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\Fault\\classification_20170921_131001_V1_8_n1000_M80_AE_Signal_20160928_144217.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\OK\\classification_20170922_094309_V1_8_n1000_M80_AE_Signal_20160506_141822.pkl --clf_check ON --class2 0 --classes 3n_2isclass --data_norm per_rms --processing butter_demod --plot ON --diff 1 --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --thr_mode fixed_value --thr_value 0.008 --window_delay 0')
 
 
 
 
-# +++++++++++VALID 1500 80
-os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --save OFF --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\Fault\\V3_9_n1500_M80_AE_Signal_20160928_154159.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\OK\\V3_9_n1500_M80_AE_Signal_20160506_152625.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\Fault\\classification_20170921_103023_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\OK\\classification_20170922_094233_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl --clf_check ON --class2 0 --thr_mode fixed_value --data_norm per_rms --plot ON --rms_change 0.7 --overlap 0.5')	
-
-a = input('press enter to continue . . . ')
-#+++++++++++VALID 1000 80
-os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method WIN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --save OFF --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\Fault\\V1_8_n1000_M80_AE_Signal_20160928_144217.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\OK\\V1_8_n1000_M80_AE_Signal_20160506_141822.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\Fault\\classification_20170921_131001_V1_8_n1000_M80_AE_Signal_20160928_144217.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\OK\\classification_20170922_094309_V1_8_n1000_M80_AE_Signal_20160506_141822.pkl --clf_check ON --class2 0 --thr_mode fixed_value --data_norm per_rms --plot ON --rms_change 0.7 --overlap 0.5')
-# 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++AUTO
-# EMDs = ['OFF', 'ON']
-# Processings = ['demod_hilbert', 'times_demod_hilbert', 'square']
-# Denois = ['OFF', 'median']
-
-# # Alphas = ['1.e-1']
-# Data_Norms = ['per_signal', 'per_rms']
-# Layers = ['100 20', '300', '14', '15 3', '90', '80 20', '70 15', '70 15 3']
-
-
-# count = 0
-# for emd in EMDs:
-	# for processing in Processings:
-		# for denois in Denois:
-			# for data_norm in Data_Norms:
-				# for layer in Layers:
-					# try:
-						# # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features i10statsnmnsnk_lrstd --rs 1 --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation tanh --data_norm ' + data_norm + ' --layers ' + layer + ' --alpha 1.e-1 --solver adam --EMD ' + emd + ' --denois ' + denois + ' --processing ' + processing + ' --med_kernel 5 --NN_name ' + str(count))
-
-
-						# # +++++++++++VALID 1500 80
-						# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --save ON --features i10statsnmnsnk_lrstd --method NN --NN_model C:\\Felix\\Code\\nico\\clf_' + str(count) +'.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\Fault\\V3_9_n1500_M80_AE_Signal_20160928_154159.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\OK\\V3_9_n1500_M80_AE_Signal_20160506_152625.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\Fault\\classification_20170921_103023_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1500_80\\OK\\classification_20170922_094233_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl --clf_check ON --class2 1 --data_norm ' + data_norm + ' --EMD ' + emd + ' --denois ' + denois + ' --processing ' + processing + ' --med_kernel 5 --plot OFF')
-						
-						# # +++++++++++VALID 1000 80
-						# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --save ON --features i10statsnmnsnk_lrstd --method NN --NN_model C:\\Felix\\Code\\nico\\clf_' + str(count) +'.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\Fault\\V1_8_n1000_M80_AE_Signal_20160928_144217.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\OK\\V1_8_n1000_M80_AE_Signal_20160506_141822.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\Fault\\classification_20170921_131001_V1_8_n1000_M80_AE_Signal_20160928_144217.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Validation_Case\\1000_80\\OK\\classification_20170922_094309_V1_8_n1000_M80_AE_Signal_20160506_141822.pkl --clf_check ON --class2 1 --data_norm ' + data_norm + ' --EMD ' + emd + ' --denois ' + denois + ' --processing ' + processing + ' --med_kernel 5 --plot OFF')
-						
-						
-						
-						
-					# except:
-						# print('exception')
-					
-					# count = count + 1
-
-
-
-	
-
-
-
-# # +++++++++++TEST 1500 80
-# os.system('python Burst_Detection.py --channel AE_Signal --save OFF --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method DFP --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\Fault\\V2_9_n1500_M80_AE_Signal_20160928_151441.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\OK\\V2_9_n1500_M80_AE_Signal_20160506_145215.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\Fault\\classification_20170922_134842_V2_9_n1500_M80_AE_Signal_20160928_151441.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\OK\\classification_20170925_164839_V2_9_n1500_M80_AE_Signal_20160506_145215.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 0.9 --data_norm per_rms --plot ON --pv_removal 0.01 0.5 15')
+#+++++++++++TEST 1500 80
+os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --save OFF --features sortint20_stats_nsnk --method NN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171011_122417.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\Fault\\V2_9_n1500_M80_AE_Signal_20160928_151441.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\OK\\V2_9_n1500_M80_AE_Signal_20160506_145215.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\Fault\\classification_20170922_134842_V2_9_n1500_M80_AE_Signal_20160928_151441.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_80\\OK\\classification_20170925_164839_V2_9_n1500_M80_AE_Signal_20160506_145215.pkl --clf_check ON --class2 0 --data_norm per_rms --processing butter_demod --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --plot ON --diff 1 --classes 3n_2isclass --thr_mode fixed_value --thr_value 0.008 --save_plot ON --window_delay 0 --save_name best')
 # a = input('press enter to continue . . . ')
 
-# #+++++++++++TEST 1000 80
-# os.system('python Burst_Detection.py --channel AE_Signal --save OFF --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method DFP --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\Fault\\V2_8_n1000_M80_AE_Signal_20160928_151108.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\OK\\V2_8_n1000_M80_AE_Signal_20160506_144637.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\Fault\\classification_20170922_122221_V2_8_n1000_M80_AE_Signal_20160928_151108.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\OK\\classification_20170922_122316_V2_8_n1000_M80_AE_Signal_20160506_144637.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 0.9 --data_norm per_rms --plot ON --pv_removal 0.01 0.5 15')
+
+#+++++++++++TEST 1000 80
+os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --save OFF --features sortint20_stats_nsnk --method NN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171011_122417.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\Fault\\V2_8_n1000_M80_AE_Signal_20160928_151108.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\OK\\V2_8_n1000_M80_AE_Signal_20160506_144637.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\Fault\\classification_20170922_122221_V2_8_n1000_M80_AE_Signal_20160928_151108.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1000_80\\OK\\classification_20170922_122316_V2_8_n1000_M80_AE_Signal_20160506_144637.pkl --clf_check ON --class2 0 --data_norm per_rms --processing butter_demod --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --plot ON --diff 1 --classes 3n_2isclass --thr_mode fixed_value --thr_value 0.008 --save_plot ON --window_delay 0 --save_name best')
 # a = input('press enter to continue . . . ')
 
-# #+++++++++++TEST 1500 40
-# os.system('python Burst_Detection.py --channel AE_Signal --save OFF --fs 1.e6 --power2 20 --features i10statsnmnsnk_lrstd_lrnper5 --method DFP --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171002_140114.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\Fault\\V1_6_n1500_M40_AE_Signal_20160928_143502.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\OK\\V1_6_n1500_M40_AE_Signal_20160506_140849.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\Fault\\classification_20170921_151654_V1_6_n1500_M40_AE_Signal_20160928_143502.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\OK\\classification_20170925_164917_V1_6_n1500_M40_AE_Signal_20160506_140849.pkl --clf_check ON --class2 0 --thr_mode fixed_value --thr_value 0.9 --data_norm per_rms --plot ON --pv_removal 0.01 0.5 15')
+
+#+++++++++++TEST 1500 40
+os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --save OFF --features sortint20_stats_nsnk --method NN --NN_model C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171011_122417.pkl --n_files 2 --files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\Fault\\V1_6_n1500_M40_AE_Signal_20160928_143502.mat C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\OK\\V1_6_n1500_M40_AE_Signal_20160506_140849.mat --clf_files C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\Fault\\classification_20170921_151654_V1_6_n1500_M40_AE_Signal_20160928_143502.pkl C:\\Felix\Data\\CNs_Getriebe\\Paper_Bursts\\Test_Case\\1500_40\\OK\\classification_20170925_164917_V1_6_n1500_M40_AE_Signal_20160506_140849.pkl --clf_check ON --class2 0 --data_norm per_rms --processing butter_demod --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --plot ON --diff 1 --classes 3n_2isclass --thr_mode fixed_value --thr_value 0.008 --save_plot ON --window_delay 0 --save_name 40best')
 
 
 
@@ -155,36 +45,14 @@ os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 -
 
 
 
+#CASA****************************************************************
 
+# # +++++++++++VALID 1500 80
+# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features Data --method NN --n_files 2 --save OFF --processing butter_demod --files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\Fault\\valid_1500_80_fault.txt C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\OK\\valid_1500_80_ok.txt --clf_files C:\\work\Burst_Detection\\Data\\Validation_Case\\1500_80\\Fault\\classification_20170921_103023_V3_9_n1500_M80_AE_Signal_20160928_154159.pkl C:\\work\\Burst_Detection\\Data\\Validation_Case\\1500_80\\OK\\classification_20170922_094233_V3_9_n1500_M80_AE_Signal_20160506_152625.pkl --clf_check ON --class2 1 --data_norm per_rms --plot ON --NN_model C:\\code\\nico\\clf_20171008_143406.pkl --classes 2n_2noclass --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --diff 1')	
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features interval10_stats_nomean --layers 100 10 --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation relu --rs 1')
-
-# # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features interval10_stats_nomean --layers 50 10 --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation relu --rs 1')
-
-# # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features interval10_stats_nomean --layers 50 5 --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation relu --rs 1')
-
-# # os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features interval10_stats_nomean --layers 300 150 80 40 20 10 5 2 --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation relu --rs 1')
-
-
-# os.system('python Reco_Signal_Training.py --channel AE_Signal --save ON --features interval5_stats_nomean --layers 50 40 30 25 15 10 5 2 --files C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\V1_9_n1500_M80_AE_Signal_20160928_144737.mat C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\V1_9_n1500_M80_AE_Signal_20160506_142422.mat --classifications C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_111359_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\Fault\classification_20170831_093634_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl C:\Felix\Data\CNs_Getriebe\Paper_Bursts\Analysis_Case_1500_80\OK\classification_20170901_101337_V1_9_n1500_M80_AE_Signal_20160506_142422.pkl --activation relu --rs 1')
+# a = input('press enter to continue . . . ')
+# #+++++++++++VALID 1000 80
+# os.system('python Burst_Detection.py --channel AE_Signal --fs 1.e6 --power2 20 --features Data --method NN --n_files 2 --save OFF --processing butter_demod --files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\Fault\\valid_1000_80_fault.txt C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\OK\\valid_1000_80_ok.txt --clf_files C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\Fault\\classification_20170921_131001_V1_8_n1000_M80_AE_Signal_20160928_144217.pkl C:\\work\\Burst_Detection\\Data\\Validation_Case\\1000_80\\OK\\classification_20170922_094309_V1_8_n1000_M80_AE_Signal_20160506_141822.pkl --clf_check ON --class2 1 --data_norm per_rms --plot ON --NN_model C:\\code\\nico\\clf_20171008_143406.pkl --classes 2n_2noclass --demod_filter lowpass 5000. 3 --demod_prefilter highpass 70.e3 3 --diff 1')
 
 
 

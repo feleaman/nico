@@ -41,8 +41,8 @@ import pandas as pd
 
 
 N = 4
-men_means = (34, 49, 38, 73)
-men_std = (4.54, 5., 3.62, 3.27)
+men_means = (0, 50.2, 0, 72.8)
+men_std = (0, 1.21, 0, 3.79)
 
 ind = np.arange(N)  # the x locations for the groups
 width = 0.35       # the width of the bars
@@ -50,8 +50,8 @@ width = 0.35       # the width of the bars
 fig, ax = plt.subplots()
 rects1 = ax.bar(ind, men_means, width, color='r', yerr=men_std, )
 
-women_means = (75, 70, 66, 62)
-women_std = (9.53, 6.22, 2.76, 2.69)
+women_means = (0, 82, 0, 67.6)
+women_std = (0, 1.63, 0, 4.58)
 rects2 = ax.bar(ind + width, women_means, width, color='y', yerr=women_std)
 
 # add some text for labels, title and axes ticks
@@ -83,8 +83,8 @@ plt.show()
 
 
 N = 4
-men_means = (47, 57, 48, 67)
-men_std = (3.91, 3.55, 3.47, 3.27)
+men_means = (0, 62.3, 0, 70.)
+men_std = (0, 0.866, 0, 3.25)
 
 ind = np.arange(N)  # the x locations for the groups
 width = 0.35       # the width of the bars

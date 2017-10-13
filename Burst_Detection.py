@@ -32,11 +32,11 @@ plt.rcParams['agg.path.chunksize'] = 20000 #for plotting optimization purposes
 
 
 #+++++++++++++++++++++++++++CONFIG++++++++++++++++++++++++++++++++++++++++++
-Inputs = ['channel', 'fs', 'power2', 'method', 'n_files', 'save']
-Opt_Input = {'files':None, 'window_time':0.001, 'overlap':0, 'data_norm':None, 'clf_files':None, 'clf_check':'OFF', 'plot':'ON'}
+Inputs = ['channel', 'fs', 'power2', 'method', 'n_files', 'save', 'save_plot']
+Opt_Input = {'files':None, 'window_time':0.001, 'overlap':0, 'data_norm':None, 'clf_files':None, 'clf_check':'OFF', 'plot':'ON', 'save_name':'NAME'}
 Opt_Input_analysis = {'EMD':'OFF', 'denois':'OFF', 'med_kernel':3, 'processing':'OFF', 'demod_filter':None, 'demod_prefilter':None, 'demod_rect':None, 'demod_dc':None, 'diff':'OFF'}
 Opt_Input_thr = {'thr_mode':'factor_rms', 'thr_value':1}
-Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':100, 'window_extend':0}
+Opt_Input_cant = {'demod':None, 'prefilter':None, 'postfilter':None, 'rectification':None, 'dc_value':None, 'warm_points':0, 'window_delay':0}
 Opt_Input_nn = {'NN_model':None, 'features':None, 'feat_norm':'standard', 'class2':None, 'classes':None}
 Opt_Input_dfp = {'pv_removal':[0.01, 1.0, 4]}
 
@@ -122,28 +122,59 @@ def main(argv):
 		print(len(T_Burst[i]))
 		print(Results[i])
 	print(config)
+	
+	# zoom_list = [None, [0.425, 0.450], [0.225, 0.250] [0.825, 0.850] [0.320, 0.345] [0.625,] [,] [,] [,] [,] [,] [,] [,] ]
+	
+	
+	
+	
+	
 	if config['save'] == 'ON':
 		mylist = [Filenames, Results, config]
-		out_file = 'result_' + os.path.basename(config['NN_model'])
+		if config['method'] == 'NN':
+			out_file = 'result_' + config['save_name'] + os.path.basename(config['NN_model'])
+		else:
+			out_file = 'result_' + os.path.basename(config['save_name'] + '.pkl')
 		out_file = label + out_file
 		save_pickle(out_file, mylist)
 		# with io.open(out_file, 'w', encoding='unicode-escape') as f:
 			# f.writelines(line + u'\n' for line in mylist)
 		# np.savetxt('result_' + os.path.basename(config['NN_model']).replace('pkl', 'txt'), )
 	
-	if config['plot'] == 'ON':
-		fig = [[], []]
-		fig[0], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
-		for i in range(config['n_files']):
-			plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True)	
+	zoom_list = [0.425, 0.225, 0.825, 0.320, 0.625, 0.950, 0.100, 0.720, 0.770, 0.545]
+	zoom_list = [[zoom_ini, zoom_ini + 0.025] for zoom_ini in zoom_list]
+	zoom_list.append(None)
+	# zoom_list = [None]
+	
+	# print(signal_rms(XRAW[0]))
+	# aaa = input('jiasjfoasdfksdn')
+	
+	for zoom in zoom_list:		
+		if config['plot'] == 'ON':
+			
+			
+			ylimits = ylimits_zoom(zoom, config, X)
+			ylimitsRAW = ylimits_zoom(zoom, config, XRAW, norm='rms')
 
-		#++++++++++++++++++++++ BURSTS BACK IN RAW SIGNALS ++++++++
-		fig[1], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
-		for i in range(config['n_files']):
-			plot_burst(fig[1], ax, i, traw, XRAW[i], config, T_Burst[i], ARAW_Burst[i], name='RAW', color='darkblue', clf=CLFs[i])	
-		plt.show()
-	else:
-		print('Plot Off')
+			
+			fig = [[], []]
+			fig[0], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
+			for i in range(config['n_files']):
+				plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True, color='darkblue', zoom=zoom, ylimits=ylimits)	
+					
+					
+				#++++++++++++++++++++++ BURSTS BACK IN RAW SIGNALS ++++++++
+				
+			fig[1], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
+			for i in range(config['n_files']):
+				
+				plot_burst(fig[1], ax, i, traw, XRAW[i], config, T_Burst[i], ARAW_Burst[i], name='RAW', clf=CLFs[i], zoom=zoom, ylimits=ylimitsRAW)
+				
+			if config['save_plot'] == 'OFF':
+				plt.show()
+		else:
+			print('Plot Off')
+		plt.close('all')
 	
 	return
 
@@ -252,7 +283,7 @@ def burst_detector(x1, config, count=None):
 		if config['features'] != config_model['features']:
 			print('error features model NN')
 			sys.exit()
-	if config['method'] == 'ENVTHR':
+	if config['method'] == 'EDG':
 		if config['processing'] == 'OFF':
 			print('env thr must have processing')
 			sys.exit()
@@ -286,7 +317,7 @@ def burst_detector(x1, config, count=None):
 		print('with diff')
 		x1 = diff_signal_eq(x1, config['diff'])
 	
-	
+	# print(signal_rms(x1))
 	#Filter
 	# if config_filter['analysis'] == True:
 		# print('+++Filter:')
@@ -368,7 +399,7 @@ def burst_detector(x1, config, count=None):
 			# print('Normalization per rms')
 		
 		
-		if (config['method'] == 'THR' or config['method'] == 'ENVTHR'):
+		if (config['method'] == 'THR' or config['method'] == 'EDG'):
 		
 			
 		
@@ -394,7 +425,8 @@ def burst_detector(x1, config, count=None):
 					if clf_1[count] == 0:
 						Results['NEG'] = Results['NEG'] + 1
 						for time_burst in t_burst_corr1:
-							if time_burst in twindow:
+							# vec = [str(twindow[indi]) for indi in range(len(twindow))]
+							if time_burst in twindow: #twindow en vez de vec
 								print('++++++++++++FP in ', count*config['window_time'])
 								Results['FP'] = Results['FP'] + 1
 								flag = 'ON'
@@ -403,7 +435,8 @@ def burst_detector(x1, config, count=None):
 					elif clf_1[count] == 1:
 						Results['POS'] = Results['POS'] + 1
 						for time_burst in t_burst_corr1:
-							if time_burst in twindow:
+							# vec = [str(twindow[indi]) for indi in range(len(twindow))]
+							if time_burst in twindow: #twindow en vez de vec
 								# print(time_burst)
 								Results['TP'] = Results['TP'] + 1
 								flag = 'ON'
@@ -674,8 +707,6 @@ def burst_detector(x1, config, count=None):
 					
 					
 					for k in range(len(tWindows)-1):
-
-
 						contador = contador + 1
 						flag = 'OFF'
 						if clf_1[k] == 2:
@@ -701,8 +732,7 @@ def burst_detector(x1, config, count=None):
 										print('error clf 125')
 									
 							if flag == 'OFF':
-								Results['TN'] = Results['TN'] + 1
-								
+								Results['TN'] = Results['TN'] + 1								
 								
 						elif clf_1[k] == 1:
 							Results['POS'] = Results['POS'] + 1
@@ -863,7 +893,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	config_input['window_time'] = float(config_input['window_time'])
 	config_input['thr_value'] = float(config_input['thr_value'])
 	config_input['rms_change'] = float(config_input['rms_change'])
-	config_input['window_extend'] = float(config_input['window_extend'])
+	config_input['window_delay'] = float(config_input['window_delay'])
 	
 	# config_input['demod_prefilter'][3] = float(config_input['demod_prefilter'][3]) #order
 	# config_input['demod_filter'][2] = float(config_input['demod_filter'][2]) #order
@@ -884,7 +914,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	
 	# Variable conversion
 	config_input['pv_removal'] = [float(config_input['pv_removal'][0]), float(config_input['pv_removal'][1]), int(config_input['pv_removal'][2])]
-	if config_input['demod_prefilter'] != None:
+	if config_input['demod_prefilter'][0] != 'OFF':
 		if config_input['demod_prefilter'][0] == 'bandpass':
 			config_input['demod_prefilter'] = [config_input['demod_prefilter'][0], [float(config_input['demod_prefilter'][1]), float(config_input['demod_prefilter'][2])], float(config_input['demod_prefilter'][3])]
 		elif config_input['demod_prefilter'][0] == 'highpass':
@@ -900,7 +930,10 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	return config_input
 	
 #Signal RAW
-def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None):
+def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None, zoom=None, ylimits=None):
+	# print(signal_rms(x1))
+	# a = input('oooooo')
+	
 	if name != None:
 		name = name + ' '
 	else:
@@ -911,15 +944,23 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		ax = [ax]
 
 	ax[nax].plot(t, x1/signal_rms(x1), color=color)
-	if (config['method'] == 'THR' or config['method'] == 'DFP' or config['method'] == 'ENVTHR'):
+	# print(signal_rms(x1))
+	if zoom != None:
+		ax[nax].set_xlim(zoom[0], zoom[1])
+		ax[nax].set_ylim(ylimits[0]*1.1, ylimits[1]*1.1)
+		ax[nax].ticklabel_format(style='sci', scilimits=(-2, 2))
+	
+	if (config['method'] == 'THR' or config['method'] == 'DFP' or config['method'] == 'EDG'):
 		if thr == True:
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
 			ax[nax].axhline(threshold1, color='k')		
-		ax[nax].plot(t_burst_corr1, amp_burst_corr1/signal_rms(x1), 'ro')
+		ax[nax].plot(t_burst_corr1, amp_burst_corr1/signal_rms(x1), 'ro') 
+		# print(amp_burst_corr1/signal_rms(x1))
+		# a = input('aaa')
 	elif (config['method'] == 'NN' or config['method'] == 'WIN'):
 		for i in range(len(t_burst_corr1)):
-			# ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='r', alpha=0.4)
-			ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
+			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='r', alpha=0.4)
+			# ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 	if clf != None:
 		print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 		for k in range(len(clf)):
@@ -930,7 +971,7 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		print(len(ind_w_positives))
 		print(len(clf))
 		for i in range(len(ind_w_positives)):
-			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.4)
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.4)
 	
 	if nax == 0:
 		name = 'Faulty Case Test Signal: '
@@ -942,12 +983,22 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		flag2 = config['filename'].find('80')
 		if flag2 != -1:
 			name = name + '1500RPM / 80% Load'
+			plotname = '_RAW_1500_80_'
 		else:
 			name = name + '1500RPM / 40% Load'
+			plotname = '_RAW_1500_40_'
 	else:
 		name = name + '1000RPM / 80% Load'
+		plotname = '_RAW_1000_80_'
 	ax[nax].set_title(name, fontsize=10)
 	ax[nax].set_ylabel('Norm. Amplitude')
+	
+	if config['save_plot'] == 'ON':
+		if zoom == None:
+			zoom_ini = 'All'
+		else:
+			zoom_ini = str(zoom[0])
+		plt.savefig(config['method'] + plotname + '_' + zoom_ini + '.png')
 	
 	
 	
@@ -957,7 +1008,7 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 	return
 
 #Signal processed
-def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None):
+def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None, zoom=None, ylimits=None):
 	if name != None:
 		name = name + ' '
 	else:
@@ -968,6 +1019,19 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		ax = [ax]
 
 	ax[nax].plot(t, x1, color=color)
+	if zoom != None:
+		ax[nax].set_xlim(zoom[0], zoom[1])
+		ax[nax].set_ylim(ylimits[0]*1.1, ylimits[1]*1.1)
+		ax[nax].ticklabel_format(style='sci', scilimits=(-2, 2))
+		
+		# vec = [zoom[0]*config['fs'], zoom[1]*config['fs']]
+		# max = np.max(x1[int(vec[0]):int(vec[1])])
+		# min = np.min(x1[int(vec[0]):int(vec[1])])
+		# ax[nax].set_ylim(min*1.1, max*2)
+		# ax[nax].ticklabel_format(style='sci', scilimits=(-2, 2))
+		# ax[nax].set_autoscaleyon(True)
+		# ax[nax].set_autoscalexon(False)
+		# ax[nax].autoscale(axis='y', tight=False)
 	if config['method'] == 'WIN':
 		Windows = prepare_windows(x1, config)
 		RMSs = []
@@ -978,7 +1042,7 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 			t2.append((u+1)*config['window_time'] - config['window_time']/2.0)
 		ax[nax].plot(t2, RMSs, '-s')
 	
-	if (config['method'] == 'THR' or config['method'] == 'DFP' or config['method'] == 'ENVTHR'):
+	if (config['method'] == 'THR' or config['method'] == 'DFP' or config['method'] == 'EDG'):
 		if thr == True:
 			threshold1 = read_threshold(config['thr_mode'], config['thr_value'], x1)
 			ax[nax].axhline(threshold1, color='k')
@@ -986,7 +1050,7 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 	elif config['method'] == 'NN' or config['method'] == 'WIN':
 		for i in range(len(t_burst_corr1)):
 			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=(t_burst_corr1[i]+config['window_time']), facecolor='r', alpha=0.4)
-			ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
+			# ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 			# ax[nax].plot(t_burst_corr1[i], amp_burst_corr1[i], 'ro')
 	if clf != None:
 		for k in range(len(clf)):
@@ -997,7 +1061,7 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		# print(len(ind_w_positives))
 		# print(len(clf))
 		for i in range(len(ind_w_positives)):
-			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.4)
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.4)
 		
 	if nax == 0:
 		name = 'Faulty Case Test Signal: '
@@ -1009,18 +1073,30 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		flag2 = config['filename'].find('80')
 		if flag2 != -1:
 			name = name + '1500RPM / 80% Load'
+			plotname = '_1500_80_'
 		else:
 			name = name + '1500RPM / 40% Load'
+			plotname = '_1500_40_'
 	else:
 		name = name + '1000RPM / 80% Load'
+		plotname = '_1000_80_'
 	ax[nax].set_title(name, fontsize=10)
 	# ax[nax].set_ylabel('Amplitude')
-	if config['method'] == 'ANN' or config['method'] == 'ENV':
+	if config['method'] == 'NN' or config['method'] == 'ENV':
 		ax[nax].set_ylabel('Diff. Envelope')
 	elif config['method'] == 'DFP':
 		ax[nax].set_ylabel('Peaks in Det. Funct.')
 	else:
 		ax[nax].set_ylabel('Norm. Amplitude')
+		
+		
+	if config['save_plot'] == 'ON':
+		if zoom == None:
+			zoom_ini = 'All'
+		else:
+			zoom_ini = str(zoom[0])
+		plt.savefig(config['method'] + plotname + '_' + zoom_ini + '.png')
+	
 	return
 
 def read_threshold(mode, value, x1=None):
@@ -1038,11 +1114,11 @@ def prepare_windows(x, config):
 	Windows1 = []
 	window_points = int(config['window_time']*config['fs'])
 	window_advance = int(window_points*config['overlap'])
-	if config['window_extend'] != 0:
-		print('With window extend')
-		window_extend = int(config['window_extend']*config['fs'])
+	if config['window_delay'] != 0:
+		print('With window delay')
+		window_delay = int(config['window_delay']*config['fs'])
 	else:
-		window_extend = 0
+		window_delay = 0
 	
 	if config['overlap'] != 0:
 		print('Windows with overlap')
@@ -1053,11 +1129,11 @@ def prepare_windows(x, config):
 	
 	
 	for count in range(n_windows):
-		if config['overlap'] != 0: #with overlap not working
+		if config['overlap'] != 0: #with overlap not working?
 			Windows1.append(x[count*window_advance:window_points+window_advance*count])
 		else:
 			if count != 0:
-				Windows1.append(x[(count*window_points - window_extend):(count+1)*window_points])
+				Windows1.append(x[(count*window_points - window_delay):((count+1)*window_points - window_delay)])
 			else:
 				Windows1.append(x[(count*window_points):(count+1)*window_points])
 	return Windows1
@@ -1099,7 +1175,28 @@ def dfp_alg3(df_x, locs, level_ini, level_fin, steps):
 		locs = dfp_alg2(df_x)
 	return locs
 	
+def ylimits_zoom(zoom, config, signal, norm=None):
+	v_max = 0.
+	v_min = 0.
+	if zoom != None:
+		for i in range(config['n_files']):
+			if norm == 'rms':
+				dada = signal[i] / signal_rms(signal[i])
+			else:
+				dada = signal[i]
+			vec = [zoom[0]*config['fs'], zoom[1]*config['fs']]
+			max = np.max(dada[int(vec[0]):int(vec[1])])
+			if max > v_max:
+				v_max = max
+			min = np.min(dada[int(vec[0]):int(vec[1])])
+			if min < v_min:
+				v_min =min
+
+		ylimits = [v_min, v_max]
+	else:
+		ylimits = None
 	
+	return ylimits
 	
 
 if __name__ == '__main__':

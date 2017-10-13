@@ -21,5 +21,7 @@ print(pik)
 
 # save_pickle('MODclassification_20171007_155215_V1_9_n1500_M80_AE_Signal_20160928_144737.pkl', pik_new)
 
+classification = pik['classification']
+print(classification[426])
 
 sys.exit()

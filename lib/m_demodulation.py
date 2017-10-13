@@ -21,19 +21,23 @@ def butter_demodulation(x, fs, filter, prefilter=None, type_rect=None, dc_value=
 		prefilter = ['none', 0, 0]
 	
 	#Pre-filter
-	type_prefilter = prefilter[0]
-	freq_prefilter = prefilter[1] #normalized freqs
-	order_prefilter = prefilter[2]
-	if type_prefilter == 'highpass':
-		freq_highpass = freq_prefilter/f_nyq
-		b, a = signal.butter(order_prefilter, freq_highpass, btype='highpass')
-		x_prefilter = signal.filtfilt(b, a, x)
-	elif type_prefilter == 'bandpass':
-		freqs_bandpass = [freq_prefilter[0]/f_nyq, freq_prefilter[1]/f_nyq]
-		b, a = signal.butter(order_prefilter, freqs_bandpass, btype='bandpass')
-		x_prefilter = signal.filtfilt(b, a, x)
+	if prefilter[0] != 'OFF':
+		type_prefilter = prefilter[0]
+		freq_prefilter = prefilter[1] #normalized freqs
+		order_prefilter = prefilter[2]
+		if type_prefilter == 'highpass':
+			freq_highpass = freq_prefilter/f_nyq
+			b, a = signal.butter(order_prefilter, freq_highpass, btype='highpass')
+			x_prefilter = signal.filtfilt(b, a, x)
+		elif type_prefilter == 'bandpass':
+			freqs_bandpass = [freq_prefilter[0]/f_nyq, freq_prefilter[1]/f_nyq]
+			b, a = signal.butter(order_prefilter, freqs_bandpass, btype='bandpass')
+			x_prefilter = signal.filtfilt(b, a, x)
+		else:
+			print('Info: Demodulation without pre-filter')
+			x_prefilter = x
+			sys.exit()
 	else:
-		print('Info: Demodulation without pre-filter')
 		x_prefilter = x
 
 	#Rectification

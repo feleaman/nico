@@ -145,7 +145,6 @@ def main(argv):
 			x = diff_signal_eq(x, config['diff'])
 
 
-
 		Signals.append(x)
 		
 		#Filenames
