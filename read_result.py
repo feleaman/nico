@@ -4,7 +4,7 @@ import pickle
 from tkinter import filedialog
 from tkinter import Tk
 sys.path.insert(0, './lib') #to open user-defined functions
-from m_open_extension import read_pickle
+from m_open_extension import read_pickle, save_pickle
 from argparse import ArgumentParser
 from matplotlib.pyplot import plot, title, savefig, figure, legend
 from numpy import float64, loadtxt
@@ -211,7 +211,7 @@ def main(argv):
 			sys.exit()
 		writer.save()
 	
-	elif config['mode'] == 'excel_test':
+	elif config['mode'] == 'excel_test_3':
 		writer = pd.ExcelWriter('Test_Results.xlsx')
 		
 		print('Select with 1500_80')
@@ -227,6 +227,49 @@ def main(argv):
 
 		writer.save()
 	
+	elif config['mode'] == 'excel_test_4':
+		writer = pd.ExcelWriter('Test_ResultsExt.xlsx')
+		
+		print('Select with 1500_80')
+		DF_1500_80 = obtain_DF_params()		
+		DF_1500_80.to_excel(writer, sheet_name='Test_Results', startrow=0)	
+		print('Select with 1000_80')
+		DF_1000_80 = obtain_DF_params()
+		DF_1000_80.to_excel(writer, sheet_name='Test_Results', startrow=5)	
+		print('Select with 1500_40')
+		DF_1500_40 = obtain_DF_params()
+		DF_1500_40.to_excel(writer, sheet_name='Test_Results', startrow=10)	
+		print('Select with 1000_40')
+		DF_1000_40 = obtain_DF_params()
+		DF_1000_40.to_excel(writer, sheet_name='Test_Results', startrow=15)	
+
+
+		writer.save()
+	
+	elif config['mode'] == 'modify_classification':
+		root = Tk()
+		root.withdraw()
+		root.update()
+		filename = filedialog.askopenfilename()
+		root.destroy()
+
+		pik = read_pickle(filename)
+		filename = os.path.basename(filename)
+		print(pik['classification'][324])
+		print(pik['classification'][325])
+		print(pik['classification'][326])
+		# pik['classification'][456] = 0
+		# pik['classification'][566] = 1
+		# pik['classification'][723] = 0
+		# pik['classification'][724] = 1
+		# pik['classification'][967] = 1
+		# pik['classification'][878] = 1
+		# pik['classification'][322] = 0
+		# pik['classification'][323] = 1
+		
+		# save_pickle(filename, pik)
+
+
 	
 	else:
 		print('unknown mode')

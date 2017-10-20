@@ -27,7 +27,7 @@ from m_denois import *
 from m_det_features import *
 from m_processing import *
 import io
-
+import matplotlib.patches as mpatches
 plt.rcParams['agg.path.chunksize'] = 20000 #for plotting optimization purposes
 
 
@@ -106,6 +106,13 @@ def main(argv):
 		Filenames[k] = filename1
 		
 		x1, t_burst_corr1, amp_burst_corr1, results, clf_1 = burst_detector(x1raw, config, count=k)
+		# aaa = x1-x1raw
+		# plt.plot(aaa)
+		# plt.show()
+		# plt.plot(x1raw)
+		# plt.show()
+		# plt.plot(x1)
+		# plt.show()
 		print('t burst11111')
 		print(t_burst_corr1)
 		X[k] = x1
@@ -141,15 +148,14 @@ def main(argv):
 			# f.writelines(line + u'\n' for line in mylist)
 		# np.savetxt('result_' + os.path.basename(config['NN_model']).replace('pkl', 'txt'), )
 	
-	zoom_list = [0.425, 0.225, 0.825, 0.320, 0.625, 0.950, 0.100, 0.720, 0.770, 0.545]
-	zoom_list = [[zoom_ini, zoom_ini + 0.025] for zoom_ini in zoom_list]
-	zoom_list.append(None)
-	# zoom_list = [None]
+	# zoom_list = [0.425, 0.225, 0.825, 0.320, 0.625, 0.950, 0.100, 0.720, 0.770, 0.545]
+	# zoom_list = [[zoom_ini, zoom_ini + 0.025] for zoom_ini in zoom_list]
+	# zoom_list.append(None)
+	zoom_list = [None]
 	
 	# print(signal_rms(XRAW[0]))
 	# aaa = input('jiasjfoasdfksdn')
-	
-	for zoom in zoom_list:		
+	for zoom in zoom_list:
 		if config['plot'] == 'ON':
 			
 			
@@ -160,8 +166,9 @@ def main(argv):
 			fig = [[], []]
 			fig[0], ax = plt.subplots(nrows=config['n_files'], ncols=1, sharex=True, sharey=True)
 			for i in range(config['n_files']):
-				plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True, color='darkblue', zoom=zoom, ylimits=ylimits)	
-					
+				plot_burst_paper(fig[0], ax, i, t, X[i], config, T_Burst[i], A_Burst[i], thr=True, color='darkblue', zoom=zoom, ylimits=ylimits, clf=CLFs[i])
+
+
 					
 				#++++++++++++++++++++++ BURSTS BACK IN RAW SIGNALS ++++++++
 				
@@ -296,6 +303,8 @@ def burst_detector(x1, config, count=None):
 	elif config['data_norm'] == 'per_rms':
 		x1 = x1 / signal_rms(x1)
 		print('Normalization per rms')
+	else:
+		print('No normalization')
 	
 	
 	
@@ -420,6 +429,7 @@ def burst_detector(x1, config, count=None):
 				count = 0
 				for twindow in tWindows:
 					flag = 'OFF'
+					print(count)
 					if clf_1[count] == 2:
 						clf_1[count] = config['class2']
 					if clf_1[count] == 0:
@@ -534,6 +544,8 @@ def burst_detector(x1, config, count=None):
 					values = sortint10_stats_nsnk(window1)
 				elif config['features'] == 'si20statsnsnk_LRstdmean':
 					values = si20statsnsnk_LRstdmean(window1)
+				elif config['features'] == 'sortint25_stats_nsnk':
+					values = sortint25_stats_nsnk(window1)
 					
 					
 				else:
@@ -933,7 +945,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=None, name=None, color=None, clf=None, zoom=None, ylimits=None):
 	# print(signal_rms(x1))
 	# a = input('oooooo')
-	
+	# x1 = x1/signal_rms(x1)
 	if name != None:
 		name = name + ' '
 	else:
@@ -944,6 +956,8 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		ax = [ax]
 
 	ax[nax].plot(t, x1/signal_rms(x1), color=color)
+	# ax[nax].plot(t, x1, color=color)
+
 	# print(signal_rms(x1))
 	if zoom != None:
 		ax[nax].set_xlim(zoom[0], zoom[1])
@@ -959,8 +973,8 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		# a = input('aaa')
 	elif (config['method'] == 'NN' or config['method'] == 'WIN'):
 		for i in range(len(t_burst_corr1)):
-			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='r', alpha=0.4)
-			# ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
+			# ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=t_burst_corr1[i]+config['window_time'], facecolor='r', alpha=0.5)
+			ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 	if clf != None:
 		print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 		for k in range(len(clf)):
@@ -971,7 +985,8 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		print(len(ind_w_positives))
 		print(len(clf))
 		for i in range(len(ind_w_positives)):
-			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.4)
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.5)
+			# ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 	
 	if nax == 0:
 		name = 'Faulty Case Test Signal: '
@@ -1040,7 +1055,8 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 			RMSs.append(signal_rms(Windows[k]))
 		for u in range(len(RMSs)):
 			t2.append((u+1)*config['window_time'] - config['window_time']/2.0)
-		ax[nax].plot(t2, RMSs, '-s')
+		ax[nax].plot(t2, RMSs, color='cyan', linestyle='-', marker='s', label='rms value')
+		ax[nax].legend()
 	
 	if (config['method'] == 'THR' or config['method'] == 'DFP' or config['method'] == 'EDG'):
 		if thr == True:
@@ -1049,8 +1065,13 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		ax[nax].plot(t_burst_corr1, amp_burst_corr1, 'ro')
 	elif config['method'] == 'NN' or config['method'] == 'WIN':
 		for i in range(len(t_burst_corr1)):
-			ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=(t_burst_corr1[i]+config['window_time']), facecolor='r', alpha=0.4)
-			# ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
+			# ax[nax].axvspan(xmin=t_burst_corr1[i], xmax=(t_burst_corr1[i]+config['window_time']), facecolor='r', alpha=0.5)
+			# line, = ax[nax].plot([1, 2, 3], label='Inline label')
+			# # Overwrite the label by calling the method.
+			# line.set_label('Label via method')
+			# ax[nax].legend()
+			
+			ax[nax].plot(t_burst_corr1[i] + config['window_time']/2.0, 0., 'ro')
 			# ax[nax].plot(t_burst_corr1[i], amp_burst_corr1[i], 'ro')
 	if clf != None:
 		for k in range(len(clf)):
@@ -1061,7 +1082,7 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		# print(len(ind_w_positives))
 		# print(len(clf))
 		for i in range(len(ind_w_positives)):
-			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='r', alpha=0.4)
+			ax[nax].axvspan(xmin=config['window_time']*ind_w_positives[i], xmax=config['window_time']*(ind_w_positives[i] + 1), facecolor='y', alpha=0.5)
 		
 	if nax == 0:
 		name = 'Faulty Case Test Signal: '
@@ -1082,7 +1103,7 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 		plotname = '_1000_80_'
 	ax[nax].set_title(name, fontsize=10)
 	# ax[nax].set_ylabel('Amplitude')
-	if config['method'] == 'NN' or config['method'] == 'ENV':
+	if config['method'] == 'NN' or config['method'] == 'EDG':
 		ax[nax].set_ylabel('Diff. Envelope')
 	elif config['method'] == 'DFP':
 		ax[nax].set_ylabel('Peaks in Det. Funct.')

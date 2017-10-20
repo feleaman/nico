@@ -265,6 +265,8 @@ def main(argv):
 					values = sortint10_stats_nsnk(current_window)
 				elif config['features'] == 'si20statsnsnk_LRstdmean':
 					values = si20statsnsnk_LRstdmean(current_window)
+				elif config['features'] == 'sortint25_stats_nsnk':
+					values = sortint25_stats_nsnk(current_window)
 					
 					
 					
@@ -429,7 +431,7 @@ def read_parser(argv, Inputs, Inputs_opt, Defaults):
 	config_input['layers'] = correct_layers
 	if config_input['rs'] != None:
 		config_input['rs'] = int(config_input['rs'])	
-	if config_input['demod_prefilter'] != None:
+	if config_input['demod_prefilter'][0] != 'OFF':
 		if config_input['demod_prefilter'][0] == 'bandpass':
 			config_input['demod_prefilter'] = [config_input['demod_prefilter'][0], [float(config_input['demod_prefilter'][1]), float(config_input['demod_prefilter'][2])], float(config_input['demod_prefilter'][3])]
 		elif config_input['demod_prefilter'][0] == 'highpass':

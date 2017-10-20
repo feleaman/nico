@@ -480,34 +480,66 @@ def sortint20_stats_nsnk(window):
 	values = sorted(values)
 	return values
 
-
-def sortint20_stats_nsnk(window):
+def sortint25_stats_nsnk(window):
 	intervals = []
-	intervals.append(window[0:50])
-	intervals.append(window[50:100])
-	intervals.append(window[100:150])
-	intervals.append(window[150:200])
-	intervals.append(window[200:250])
-	intervals.append(window[250:300])
-	intervals.append(window[300:350])
-	intervals.append(window[350:400])
-	intervals.append(window[400:450])
-	intervals.append(window[450:500])
-	intervals.append(window[500:550])
-	intervals.append(window[550:600])
-	intervals.append(window[600:650])
-	intervals.append(window[650:700])
-	intervals.append(window[700:750])
-	intervals.append(window[750:800])
-	intervals.append(window[800:850])
-	intervals.append(window[850:900])
-	intervals.append(window[900:950])
-	intervals.append(window[950:1000])
+	intervals.append(window[0:40])
+	intervals.append(window[40:80])
+	intervals.append(window[80:120])
+	intervals.append(window[120:160])
+	intervals.append(window[160:200])
+	intervals.append(window[200:240])
+	intervals.append(window[240:280])
+	intervals.append(window[280:320])
+	intervals.append(window[320:360])
+	intervals.append(window[360:400])
+	intervals.append(window[400:440])
+	intervals.append(window[440:480])
+	intervals.append(window[480:520])
+	intervals.append(window[520:560])
+	intervals.append(window[560:600])
+	intervals.append(window[600:640])
+	intervals.append(window[640:680])
+	intervals.append(window[680:720])
+	intervals.append(window[720:760])
+	intervals.append(window[760:800])
+	intervals.append(window[800:840])
+	intervals.append(window[840:880])
+	intervals.append(window[880:920])
+	intervals.append(window[920:960])
+	intervals.append(window[960:1000])
 	values = []
-	for i in range(20):
+	for i in range(25):
 		values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
 	values = sorted(values)
 	return values
+
+# def sortint20_stats_nsnk(window):
+	# intervals = []
+	# intervals.append(window[0:50])
+	# intervals.append(window[50:100])
+	# intervals.append(window[100:150])
+	# intervals.append(window[150:200])
+	# intervals.append(window[200:250])
+	# intervals.append(window[250:300])
+	# intervals.append(window[300:350])
+	# intervals.append(window[350:400])
+	# intervals.append(window[400:450])
+	# intervals.append(window[450:500])
+	# intervals.append(window[500:550])
+	# intervals.append(window[550:600])
+	# intervals.append(window[600:650])
+	# intervals.append(window[650:700])
+	# intervals.append(window[700:750])
+	# intervals.append(window[750:800])
+	# intervals.append(window[800:850])
+	# intervals.append(window[850:900])
+	# intervals.append(window[900:950])
+	# intervals.append(window[950:1000])
+	# values = []
+	# for i in range(20):
+		# values = values + [np.max(intervals[i]), np.min(intervals[i]), np.mean(intervals[i]), np.std(intervals[i])]
+	# values = sorted(values)
+	# return values
 
 def int20_stats_nsnk(window):
 	intervals = []

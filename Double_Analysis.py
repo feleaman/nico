@@ -126,9 +126,9 @@ t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 config_analysis = {'WFM':True, 'WFMzoom':False,  'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':True}
+'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
 
-config_norm = {'analysis':True, 'type':'rms'}
+config_norm = {'analysis':False, 'type':'rms'}
 
 
 config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[180.0e3, 350.0e3], 3]}
@@ -328,12 +328,19 @@ for element in config_analysis:
 			ax[0].plot(t, x1)
 			# ax[0].set_title(channel + ' ' + element + '\n' + filename1)
 			ax[0].set_title('Faulty Case Train Signal: 1500RPM / 80% Load', fontsize=10)
-			ax[0].set_ylabel('Amplitude')
+			if config_norm['analysis'] == True:
+				ax[0].set_ylabel('Norm. Amplitude')
+			else:
+				ax[0].set_ylabel('Amplitude')
+
 
 			ax[1].plot(t, x2)
 			# ax[1].set_title(channel + ' ' + element + '\n' + filename2)
 			ax[1].set_title('Healthy Case Train Signal: 1500RPM / 80% Load', fontsize=10)
-			ax[1].set_ylabel('Amplitude')
+			if config_norm['analysis'] == True:
+				ax[1].set_ylabel('Norm. Amplitude')
+			else:
+				ax[1].set_ylabel('Amplitude')
 			ax[1].set_xlabel('Time s')
 		
 		elif element == 'WFMzoom':

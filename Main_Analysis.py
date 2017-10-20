@@ -112,12 +112,14 @@ n = len(x)
 tr = n*dt
 t = np.array([i*dt for i in range(n)])
 
+x = x / signal_rms(x)
+
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
 config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False, 'Cepstrum':False}
 
-config_demod = {'analysis':False, 'mode':'hilbert', 'prefilter':['highpass', 60.0e3, 3], 
-'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 50.0, 3]}
+config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['highpass', 70.0e3, 3], 
+'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3]}
 #When hilbert is selected, the other parameters are ignored
 
 config_diff = {'analysis':False, 'length':1, 'same':True}
@@ -203,6 +205,13 @@ for element in config_analysis:
 			ax_wfm.plot(t, x)
 			ax_wfm.set_xlabel('Time s')
 			ax_wfm.set_ylabel('Amplitude')
+			ax_wfm.set_xticks(np.arange(0, n_points*dt, 0.001))
+			plt.grid()
+			# fig, ax = plt.subplots(nrows=1, ncols=1)
+			# ax.set_xticks(np.arange(0, n_points*dt, window_points*dt))
+			# ax.plot(t, x1)
+			
+			plt.show()
 
 		elif element == 'FFT':
 			ax_fft = fig[count].add_subplot(1,1,1)
