@@ -9,9 +9,12 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 import numpy as np
 # import pandas as pd
-
-Inputs = ['mode', 'fs']
-InputsOpt_Defaults = {'value':1}
+from m_open_extension import *
+from m_det_features import signal_rms
+Inputs = ['mode', 'fs', 'channel']
+InputsOpt_Defaults = {'n_batches':1}
+from m_fft import mag_fft
+from m_denois import *
 
 def main(argv):
 	config = read_parser(argv, Inputs, InputsOpt_Defaults)
@@ -26,7 +29,7 @@ def main(argv):
 			root.destroy()
 			data = np.loadtxt(filepath)
 			plt.plot(data)
-			plt.show()			
+			plt.show()	
 			flag = input('\nFlag: ')
 	
 	elif config['mode'] == 'txt_concatenates':
@@ -144,14 +147,75 @@ def main(argv):
 		fig.tight_layout()
 		plt.show()
 	
+	elif config['mode'] == 'long_analysis_features':
+		for count in range(config['n_batches']):
+			root = Tk()
+			root.withdraw()
+			root.update()
+			Filepaths = filedialog.askopenfilenames()			
+			root.destroy()
+			Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
+			# RMS = [signal_rms(signal) for signal in Data]
+			RMS = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=90.e3, order=3)) for signal in Data]
+			save_pickle('rms_filt_batch_' + str(count) + '.pkl', RMS)
+			
+			
+			# mean_mag_fft = read_pickle('mean_5_fft.pkl')
+			# corrcoefMAGFFT = [np.corrcoef(mag_fft(signal, config['fs'])[0], mean_mag_fft) for signal in Data]
+			# save_pickle('fftcorrcoef_batch_' + str(count) + '.pkl', corrcoefMAGFFT)
+			
+			
+			
+			
+			# plt.boxplot(RMS)
+			# plt.show()
+	
+	elif config['mode'] == 'long_analysis_plot':
+		# RMS_long = [[] for i in range(config['n_batches'])]
+		
+		root = Tk()
+		root.withdraw()
+		root.update()
+		Filepaths = filedialog.askopenfilenames()			
+		root.destroy()
+		# Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
+		RMS_long = [read_pickle(filepath) for filepath in Filepaths]
+		# save_pickle('rms_batch.pkl', RMS)
+		
+		fig, ax = plt.subplots(nrows=1, ncols=1)
+		ax.boxplot(RMS_long)
+		ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		ax.set_xticklabels(['14:06', '14:16', '14:30', '15:00', '15:30', '16:00', '16:20', '17:00', '17:30', '18:00', '18:30', '19:00', '23:30', '00:03'])
+		ax.set_xlabel('Time on 20171020')
+		ax.set_ylabel('RMS Amplitude')
+		ax.set_ylim(bottom=1.e-4, top=4.e-4)
+		
+		# plt.boxplot(RMS_long)
+		plt.show()
+
+	elif config['mode'] == 'mean_mag_fft':
+		root = Tk()
+		root.withdraw()
+		root.update()
+		Filepaths = filedialog.askopenfilenames()			
+		root.destroy()
+		Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
+		meanFFT = np.zeros(len(Data[0])/2)
+		
+		for k in range(len(Data)):
+			magX, f, df = mag_fft(Data[k], config['fs'])
+			meanFFT = meanFFT + magX
+		meanFFT = meanFFT / len(Data)
+		
+		save_pickle('mean_5_fft.pkl', meanFFT)
+		
+		plt.plot(meanFFT)
+		plt.show()
+
 	else:
 		print('unknown mode')
 		sys.exit()
 
-		
-		
-
-		
 		
 	return
 
@@ -188,10 +252,11 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 			config[element] = value
 	
 	#Type conversion to float
-	config['value'] = float(config['value'])
+	
 	config['fs'] = float(config['fs'])
 	# config['fscore_min'] = float(config['fscore_min'])
 	#Type conversion to int	
+	config['n_batches'] = int(config['n_batches'])
 	# Variable conversion
 	return config
 

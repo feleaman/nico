@@ -239,10 +239,10 @@ def burst_detector(x1, config, count=None):
 	else:
 		clf = None
 	
-
-	if (config['feat_norm'] == 'standard' and config['method'] == 'NN'):
-		print('Standard Scale:')
-		scaler = info_model[2]
+	if config['method'] == 'NN':
+		if config['feat_norm'] == 'standard':
+			print('Standard Scale:')
+			scaler = info_model[2]
 	else:
 		scaler = 0
 	

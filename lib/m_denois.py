@@ -72,8 +72,6 @@ def butter_bandpass(x, fs, freqs, order, warm_points=None):
 	
 	
 	#Pre-filter
-
-
 	freqs_bandpass = [freqs[0]/f_nyq, freqs[1]/f_nyq]
 	b, a = signal.butter(order, freqs_bandpass, btype='bandpass')
 	x_filt = signal.filtfilt(b, a, x)
@@ -89,10 +87,20 @@ def butter_lowpass(x, fs, freq, order, warm_points=None):
 	
 	
 	#Pre-filter
-
-
 	freq = freq/f_nyq
 	b, a = signal.butter(order, freq, btype='lowpass')
+	x_filt = signal.filtfilt(b, a, x)
+	
+	if warm_points != None:
+		x_filt = x_filt[warm:]
+	
+	return x_filt
+
+def butter_highpass(x, fs, freq, order, warm_points=None):
+	f_nyq = 0.5*fs
+	
+	freq = freq/f_nyq
+	b, a = signal.butter(order, freq, btype='highpass')
 	x_filt = signal.filtfilt(b, a, x)
 	
 	if warm_points != None:

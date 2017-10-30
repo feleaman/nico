@@ -10,7 +10,7 @@ import scipy.io
 import sys
 import pickle
 import numpy as np
-
+import h5py
 
 def f_open_tdms(filename, channel):
 	if filename == 'Input':
@@ -19,6 +19,10 @@ def f_open_tdms(filename, channel):
 	file = TdmsFile(filename)
 	group_name = file.groups()	
 	group_name = group_name[0]
+	# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+	# print(group_name)
+	# print(file)
+	# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 	data = file.channel_data(group_name, channel)
 	
 	return data
@@ -31,6 +35,9 @@ def f_open_tdms_2(filename):
 	group_names = tdms_file.groups()
 	channel_object = tdms_file.group_channels(group_names[0])	
 	channel_name = channel_object[0].channel
+	# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+	# print(channel_name)
+	# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 	data = tdms_file.channel_data(group_names[0], channel_name)
 	
 	# channel_object = tdms_file('Thiele_Versuche', 'AE Signal')
@@ -80,8 +87,17 @@ def f_open_mat_2(filename):
 	return data, channel
 
 def f_open_mat(filename, channel):
-	file = scipy.io.loadmat(filename)
-	data = file[channel]
+	try:
+		file = scipy.io.loadmat(filename)
+		data = file[channel]
+	except:
+		print('warning 888')
+		channel = int(channel)
+		arrays = {}
+		f = h5py.File(filename)
+		for k, v in f.items():
+			arrays[k] = np.array(v)
+		data = arrays['AE_y'][channel]
 	return data
 
 def save_pickle(pickle_name, pickle_data):
@@ -101,7 +117,8 @@ def load_signal(filename, channel=None):
 		x = f_open_mat(filename, channel)
 		x = np.ndarray.flatten(x)
 	elif extension == 'tdm': #tdms
-		x = f_open_tdms(filename, channel)
+		# x = f_open_tdms(filename, channel)
+		x = f_open_tdms_2(filename)
 	elif extension == 'txt':
 		x = np.loadtxt(filename)
 	else:
