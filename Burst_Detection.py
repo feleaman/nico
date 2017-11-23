@@ -1002,9 +1002,16 @@ def plot_burst(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1, thr=
 		else:
 			name = name + '1500RPM / 40% Load'
 			plotname = '_RAW_1500_40_'
-	else:
-		name = name + '1000RPM / 80% Load'
-		plotname = '_RAW_1000_80_'
+	else:		
+		flag2 = config['filename'].find('80')
+		if flag2 != -1:
+			name = name + '1000RPM / 80% Load'
+			plotname = '_RAW_1000_80_'
+		else:
+			name = name + '1000RPM / 40% Load'
+			plotname = '_RAW_1000_40_'
+		
+		
 	ax[nax].set_title(name, fontsize=10)
 	ax[nax].set_ylabel('Norm. Amplitude')
 	
@@ -1099,8 +1106,14 @@ def plot_burst_paper(fig, ax, nax, t, x1, config, t_burst_corr1, amp_burst_corr1
 			name = name + '1500RPM / 40% Load'
 			plotname = '_1500_40_'
 	else:
-		name = name + '1000RPM / 80% Load'
-		plotname = '_1000_80_'
+		flag2 = config['filename'].find('80')
+		if flag2 != -1:
+			name = name + '1000RPM / 80% Load'
+			plotname = '_1000_80_'
+		else:
+			name = name + '1000RPM / 40% Load'
+			plotname = '_1000_40_'
+
 	ax[nax].set_title(name, fontsize=10)
 	# ax[nax].set_ylabel('Amplitude')
 	if config['method'] == 'NN' or config['method'] == 'EDG':

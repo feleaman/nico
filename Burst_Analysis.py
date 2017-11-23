@@ -10,13 +10,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from m_open_extension import *
+from m_fft import *
+
 from openpyxl import load_workbook
-Inputs = ['mode', 'fs', 'channel']
-InputsOpt_Defaults = {'value':1}
+
 import matplotlib
 import cmath
 from scipy import signal
 from Burst_Detection import burst_detector
+
+
+
+Inputs = ['mode', 'fs', 'channel']
+InputsOpt_Defaults = {'value':1, 'us_before':1000, 'us_after':5000}
+
 def main(argv):
 	config = read_parser(argv, Inputs, InputsOpt_Defaults)
 	
@@ -27,7 +34,18 @@ def main(argv):
 		filepath = filedialog.askopenfilename()			
 		root.destroy()
 		data = load_signal(filepath, channel=config['channel'])
-		plt.plot(data)
+		t = [i/config['fs'] for i in range(len(data))]
+		# plt.xlabel('Time s')
+		# plt.ylabel('Amplitude V')
+		# plt.title('Z2, S3, Rep. 1, V2')
+		plt.figure(1)
+		plt.plot(t, data)
+		
+		plt.figure(2)
+		magX, f, df = mag_fft(data, config['fs'])
+		plt.plot(f, magX, 'r')
+		
+		
 		plt.show()			
 		
 	elif config['mode'] == 'two_correlation':
@@ -43,32 +61,33 @@ def main(argv):
 		# data = load_signal(filepath, channel=config['channel'])
 
 		
-		Data[0] = Data[0][int(np.argmax(Data[0]) - 1e3):int(np.argmax(Data[0]) + 1e5)]
-		Data[1] = Data[1][int(np.argmax(Data[1]) - 1e3):int(np.argmax(Data[1]) + 1e5)]
+		Data[0] = Data[0][int(np.argmax(Data[0]) - 1e5):int(np.argmax(Data[0]) + 1e5)]
+		Data[1] = Data[1][int(np.argmax(Data[1]) - 1e5):int(np.argmax(Data[1]) + 1e5)]
 		# for k in range(2):
 			# f_psd, Data[k] = signal.periodogram(Data[k], config['fs'], return_onesided=True, scaling='density')
 		
 		Correlation = np.correlate(Data[0]/(np.sum(Data[0]**2))**0.5, Data[1]/(np.sum(Data[1]**2))**0.5, mode='same')
-		t = [i/config['fs'] for i in range(len(Data[0]))]
+		# t = [i/config['fs'] for i in range(len(Data[0]))]
 		
-		fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-		ax[0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-		ax[1].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		# fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+		# ax[0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		# ax[1].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
 		
-		# plt.figure(0)
-		# ax[0].plot(np.array(f_psd)/1000., Data[0])	
-		ax[0].plot(t, Data[0])			
+		# # plt.figure(0)
+		# # ax[0].plot(np.array(f_psd)/1000., Data[0], 'g')	
+		# ax[0].plot(t, Data[0])			
 		# ax[0].set_ylabel('PSD $\mathregular{V^{2}}$/Hz')
-		ax[0].set_ylabel('Amplitude V')
-		ax[0].set_title('Burst on S1, Rep. 2')
+		# # ax[0].set_ylabel('Amplitude V')
+		# ax[0].set_title('Burst on S3, Rep. 1, V3')
 		
-		# plt.figure(1)
-		# ax[1].plot(np.array(f_psd)/1000., Data[1])
-		ax[1].plot(t, Data[1])	
-		ax[1].set_xlabel('Rel. Time s')
+		# # plt.figure(1)
+		# ax[1].plot(np.array(f_psd)/1000., Data[1], 'g')
+		# # ax[1].plot(t, Data[1])	
+		# # ax[1].set_xlabel('Rel. Time s')
+		# ax[1].set_xlabel('Frequency kHz')
 		# ax[1].set_ylabel('PSD $\mathregular{V^{2}}$/Hz')
-		ax[1].set_ylabel('Amplitude V')
-		ax[1].set_title('Burst on S1, Rep. 3')
+		# # ax[1].set_ylabel('Amplitude V')
+		# ax[1].set_title('Burst on S3, Rep. 3, V3')
 		
 		
 		
@@ -81,7 +100,112 @@ def main(argv):
 		# print(np.sum(Data[0]**2))
 		# plt.plot(np.absolute(Data[1])-np.absolute(Data[0]))
 
-		plt.show()	
+		# plt.show()
+	
+	elif config['mode'] == 'reference_correlation':
+		print('Select Reference Burst')
+		root = Tk()
+		root.withdraw()
+		root.update()
+		filepath_Ref = filedialog.askopenfilename()			
+		root.destroy()
+		data_ref = load_signal(filepath_Ref, channel=config['channel'])
+	
+		print('Select Burst to Correlate')
+		root = Tk()
+		root.withdraw()
+		root.update()
+		Filepaths = filedialog.askopenfilenames()			
+		root.destroy()
+		Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]		
+
+		
+		
+		data_ref = data_ref[int(np.argmax(data_ref) - config['us_before']*config['fs']/1.e6):int(np.argmax(data_ref) + config['us_after']*config['fs']/1.e6)]
+		
+		
+		# Data[0] = Data[0][int(np.argmax(Data[0]) - config['us_before']*config['fs']/1.e6):int(np.argmax(Data[0]) + config['us_after']*config['fs']/1.e6)]
+		# Data[1] = Data[1][int(np.argmax(Data[1]) - config['us_before']*config['fs']/1.e6):int(np.argmax(Data[1]) + config['us_after']*config['fs']/1.e6)]
+		t = [i/config['fs'] for i in range(len(data_ref))]
+		# plt.plot(data_ref)
+		# plt.show()
+		
+		# for k in range(2):
+			# f_psd, Data[k] = signal.periodogram(Data[k], config['fs'], return_onesided=True, scaling='density')
+		
+		# Correlation = np.correlate(Data[0]/(np.sum(Data[0]**2))**0.5, Data[1]/(np.sum(Data[1]**2))**0.5, mode='same')
+		#
+		for data in Data:
+			data = data[int(np.argmax(data) - config['us_before']*config['fs']/1.e6):int(np.argmax(data) + config['us_after']*config['fs']/1.e6)]
+			print(max_norm_correlation(data_ref, data))
+			print(argmax_norm_correlation(data_ref, data))
+			print(len(data))
+			plt.plot(data)
+			plt.plot(data_ref, 'r')
+			plt.show()
+		# fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+		# ax[0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		# ax[1].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		
+		# # plt.figure(0)
+		# # ax[0].plot(np.array(f_psd)/1000., Data[0], 'g')	
+		# ax[0].plot(t, Data[0])			
+		# ax[0].set_ylabel('PSD $\mathregular{V^{2}}$/Hz')
+		# # ax[0].set_ylabel('Amplitude V')
+		# ax[0].set_title('Burst on S3, Rep. 1, V3')
+		
+		# # plt.figure(1)
+		# ax[1].plot(np.array(f_psd)/1000., Data[1], 'g')
+		# # ax[1].plot(t, Data[1])	
+		# # ax[1].set_xlabel('Rel. Time s')
+		# ax[1].set_xlabel('Frequency kHz')
+		# ax[1].set_ylabel('PSD $\mathregular{V^{2}}$/Hz')
+		# # ax[1].set_ylabel('Amplitude V')
+		# ax[1].set_title('Burst on S3, Rep. 3, V3')
+		
+		
+		
+		
+		# plt.figure(1)
+		# plt.plot(Data[1])
+		# plt.figure(2)
+		# plt.plot(f_psd, Correlation)
+		# print(np.sum(Data[0]**2))
+		# plt.plot(np.absolute(Data[1])-np.absolute(Data[0]))
+
+		# plt.show()
+	
+	elif config['mode'] == 'plot_interp':
+		x = np.array([215, 880, 1670])
+		y = np.array([307, 57, 27])
+		# y = np.log(y)
+		from scipy.interpolate import interp1d
+		# f = interp1d(x, y)
+		# f2 = interp1d(x, y, kind='quadratic')
+		# xnew = np.linspace(215, 1670, num=40, endpoint=True)
+		# plt.plot(x, y, 'o', xnew, f(xnew), '-', xnew, f2(xnew), '--')
+		# plt.legend(['data', 'linear', 'cubic'], loc='best')
+		# plt.xlabel('Distance (mm)')
+		# plt.ylabel('Amplitude over Noise (mV)')
+		# plt.xlim((100, 2000))
+		# plt.show()
+		print(y)
+		z2 = np.polyfit(x, np.log(y), 1)
+		z = np.polyfit(x, y, 1)	
+		p = np.poly1d(z)
+		p2 = np.poly1d(z2)
+		xp = np.linspace(50, 2500, num=40, endpoint=True)
+		plt.plot(x, y, 'o', xp, p(xp), '-', xp, np.exp(1.02*p2(xp))-10, '-')
+		plt.legend(['data', 'linear', 'exp'], loc='best')
+		# plt.plot(x, y, '.', xp, np.exp(p(xp)), '-')
+		plt.xlabel('Distance (mm)')
+		plt.ylabel('Amplitude over Noise (mV)')
+		plt.xlim((50, 2500))
+		plt.ylim((0, 350))
+
+		
+		plt.show()
+
 	elif config['mode'] == 'Xcorr_analysis':
 		mydict = {}
 		for count in range(3):
@@ -96,7 +220,7 @@ def main(argv):
 			Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
 
 			for k in range(5):
-				Data[k] = Data[k][int(np.argmax(Data[k]) - 1e3):int(np.argmax(Data[k]) + 1e5)]			
+				Data[k] = Data[k][int(np.argmax(Data[k]) - 1e5):int(np.argmax(Data[k]) + 1e5)]			
 			maxxcorr_values.append(max_norm_correlation(Data[0], Data[1]))
 			maxxcorr_values.append(max_norm_correlation(Data[0], Data[2]))
 			maxxcorr_values.append(max_norm_correlation(Data[0], Data[3]))
@@ -199,7 +323,7 @@ def main(argv):
 			Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
 
 			for k in range(5):				
-				Data[k] = Data[k][int(np.argmax(Data[k]) - 1e3):int(np.argmax(Data[k]) + 1e5)]
+				Data[k] = Data[k][int(np.argmax(Data[k]) - 1e5):int(np.argmax(Data[k]) + 1e5)]
 				f_psd, Data[k] = signal.periodogram(Data[k], config['fs'], return_onesided=True, scaling='density')
 				
 			# plt.plot(f_psd, Data[k])
@@ -245,132 +369,37 @@ def main(argv):
 		
 		# Data[0] = Data[0][int(np.argmax(Data[0]) - 1e3):int(np.argmax(Data[0]) + 1e5)]
 		# Data[1] = Data[1][int(np.argmax(Data[1]) - 1e3):int(np.argmax(Data[1]) + 1e5)]
+		# Data[2] = Data[2][int(np.argmax(Data[2]) - 1e3):int(np.argmax(Data[2]) + 1e5)]
 
 		
 		# Correlation = np.correlate(Data[0]/(np.sum(Data[0]**2))**0.5, Data[1]/(np.sum(Data[1]**2))**0.5, mode='same')
 		t = [i/config['fs'] for i in range(len(Data[0]))]
 		
-		fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True, sharey=True)
-		ax[0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-		ax[1].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-		ax[2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		# fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True, sharey=True)
+		# ax[0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		# ax[1].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+		# ax[2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
 		
-		ax[0].plot(t, Data[0])			
-		ax[0].set_ylabel('Amplitude V')
-		ax[0].set_title('Sensor 1', fontsize=10)
+		# ax[0].plot(t, Data[0])			
+		# ax[0].set_ylabel('Amplitude V')
+		# ax[0].set_title('Sensor 1', fontsize=10)
 		
 
-		ax[1].plot(t, Data[1])			
-		ax[1].set_ylabel('Amplitude V')
-		ax[1].set_title('Sensor 2', fontsize=10)
+		# ax[1].plot(t, Data[1])			
+		# ax[1].set_ylabel('Amplitude V')
+		# ax[1].set_title('Sensor 2', fontsize=10)
 		
-		ax[2].plot(t, Data[2])			
-		ax[2].set_ylabel('Amplitude V')
-		ax[2].set_title('Sensor 3', fontsize=10)
-		ax[2].set_xlabel('Time s')
-		
-		
-		
-		plt.show()
+		# ax[2].plot(t, Data[2])			
+		# ax[2].set_ylabel('Amplitude V')
+		# ax[2].set_title('Sensor 3', fontsize=10)
+		# ax[2].set_xlabel('Time s')
 		
 		
 		
-		
-		from Burst_Detection import burst_detector
-		config['clf_check'] = 'OFF'
-		config['method'] = 'EDG'
-		# config['rms_change'] = 8.2
-		config['rms_change'] = 4.2
-		config['feat_norm'] = 'standard'
-		config['features'] = 'DataSorted'
-		config['data_norm'] = 'per_rms'
-		config['denois'] = 'OFF'
-		config['processing'] = 'butter_demod'
-		config['diff'] = 1
-		config['window_time'] = 0.001
-		config['overlap'] = 0
-		config['window_delay'] = 0
-		config['EMD'] = 'OFF'
-		config['NN_model'] = 'C:\\Felix\\Data\\CNs_Getriebe\\Paper_Bursts\\NN_Models\\clf_20171018_180003.pkl'
-		config['demod_filter'] = ['lowpass', 2000., 3]
-		config['demod_prefilter'] = ['highpass', 70.e3, 3]
-		# config['demod_prefilter'] = 'OFF'
-		config['demod_rect'] = None
-		config['demod_dc'] = None
-		config['class2'] = 0
-		config['classes'] = '3n_2isclass'
-		config['thr_mode'] = 'fixed_value'
-		config['thr_value'] = 0.0004
-		
-		
-		x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(Data[0], config, count=None)
-		# x1 = x1[10000:]
-		t = [i/config['fs'] for i in range(len(x1))]
-		# plt.plot(x1)
 		# plt.show()
-		# t1 = t_burst_corr1[0]
-		t1 = np.argmax(x1)/config['fs']
 		
-		x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(Data[1], config, count=None)
-		# x1 = x1[10000:]
-		# plt.plot(x1)
-		# plt.show()
-		# t2 = t_burst_corr1[0]
-		t2 = np.argmax(x1)/config['fs']
-		
-		x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(Data[2], config, count=None)
-		# x1 = x1[10000:]
-		# plt.plot(x1)
-		# plt.show()
-		# t3 = t_burst_corr1[0]
-		t3 = np.argmax(x1)/config['fs']
-		
-		
+	elif config['mode'] == 'localization':
 
-		
-
-		# t1 = np.argmax(Data[0])/config['fs']
-		# t2 = np.argmax(Data[1])/config['fs']
-		# t3 = np.argmax(Data[2])/config['fs']
-		
-
-		
-		t12 = t2 - t1
-		t13 = t3 - t1
-		theta1 = 57
-		theta2 = 57 + 240
-		theta3 = 57 + 120
-		theta13 = theta3 - theta1
-		theta12 = 120
-		theta01 = (theta13*t12/theta12 - t13)*theta12/(2*t12)
-		theta0 = theta01 + theta1
-		print('Time of Max in Sensor 1: ', t1)
-		print('Time of Max in Sensor 2: ', t2)
-		print('Time of Max in Sensor 3: ', t3)
-		print('dt 1-2: ', t12)
-		print('dt 1-3: ', t13)
-		print('Theta 1: ', theta1)
-		print('Theta 2: ', theta2)
-		print('Theta 3: ', theta3)
-		print('Theta 1-3: ', theta13)
-		print('Theta 1-2: ', theta12)
-		print('Theta 0-1: ', theta01)
-		print('Theta 0: ', theta0)
-		
-		
-		
-		# plt.figure(1)
-		# plt.plot(Data[1])
-		# plt.figure(2)
-		# plt.plot(f_psd, Correlation)
-		# print(np.sum(Data[0]**2))
-		# plt.plot(np.absolute(Data[1])-np.absolute(Data[0]))
-
-		plt.show()		
-		
-	
-	elif config['mode'] == 'localization_analysis':
-		
 		mydict = {}
 		print('Localization Analysis')
 		for count in range(3):
@@ -533,21 +562,21 @@ def calculate_angle(signal1, signal2, signal3, config):
 	# plt.plot(x1)
 	# plt.show()
 	# t1 = t_burst_corr1[0]
-	t1 = np.argmax(x1)/config['fs']
+	t1 = np.argmax(x1[5000:])/config['fs']
 	
 	x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal2, config, count=None)
 	# x1 = x1[10000:]
 	# plt.plot(x1)
 	# plt.show()
 	# t2 = t_burst_corr1[0]
-	t2 = np.argmax(x1)/config['fs']
+	t2 = np.argmax(x1[5000:])/config['fs']
 	
 	x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal3, config, count=None)
 	# x1 = x1[10000:]
 	# plt.plot(x1)
 	# plt.show()
 	# t3 = t_burst_corr1[0]
-	t3 = np.argmax(x1)/config['fs']
+	t3 = np.argmax(x1[5000:])/config['fs']
 	
 	
 
@@ -590,6 +619,10 @@ def five_burst_correlation(Data):
 def max_norm_correlation(signal1, signal2):
 	correlation = np.correlate(signal1/(np.sum(signal1**2))**0.5, signal2/(np.sum(signal2**2))**0.5, mode='same')
 	return np.max(correlation)
+
+def argmax_norm_correlation(signal1, signal2):
+	correlation = np.correlate(signal1/(np.sum(signal1**2))**0.5, signal2/(np.sum(signal2**2))**0.5, mode='same')
+	return np.argmax(correlation)
 	
 if __name__ == '__main__':
 	main(sys.argv)

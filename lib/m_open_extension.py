@@ -90,14 +90,31 @@ def f_open_mat(filename, channel):
 	try:
 		file = scipy.io.loadmat(filename)
 		data = file[channel]
+
 	except:
-		print('warning 888')
-		channel = int(channel)
-		arrays = {}
-		f = h5py.File(filename)
-		for k, v in f.items():
-			arrays[k] = np.array(v)
-		data = arrays['AE_y'][channel]
+		try:
+			print('warning 888')		
+			channel = int(channel)
+			arrays = {}
+			f = h5py.File(filename)
+			for k, v in f.items():
+				arrays[k] = np.array(v)
+			data = arrays['AE_y'][channel]
+		except:
+			print('warning 468')		
+			with h5py.File(filename, 'r') as f:
+				data = list(f['Ch0'])[0]		
+	# file = scipy.io.loadmat(filename)
+	# data = file[channel]
+	
+	# import h5py
+	# with h5py.File(filename, 'r') as f:
+		# print(list(f.keys()))
+		# # print(list(f['Ch0']))
+		# a = list(f['Ch0'])[0]
+		# print(type(a))
+		# print(a)
+
 	return data
 
 def save_pickle(pickle_name, pickle_data):

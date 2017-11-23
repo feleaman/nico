@@ -61,7 +61,7 @@ from argparse import ArgumentParser
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
 Inputs = ['channel', 'fs']
-InputsOpt_Defaults = {'value':1}
+InputsOpt_Defaults = {'power2':None}
 
 def main(argv):
 
@@ -119,18 +119,21 @@ def main(argv):
 	
 	# x = butter_bandpass(x=x, fs=config['fs'], freqs=[90.e3, 1000.e3], order=3)	
 	# x = butter_highpass(x=x, fs=config['fs'], freq=90.e3, order=3)	
-	noise = x[0:int((np.argmax(x)*dt - 0.002)*fs)]
+	# noise = x[0:int((np.argmax(x)*dt - 0.002)*fs)]
 	# x = x[int((np.argmax(x)*dt - 0.002)*fs):int((np.argmax(x)*dt + 0.01)*fs)]	
 	
 	
-	print(signal_rms(x))
-	print(signal_rms(noise))
-	burst_rms = signal_rms(x) - signal_rms(noise)
-	print(burst_rms)
+	# print(signal_rms(x))
+	# print(signal_rms(noise))
+	# burst_rms = signal_rms(x) - signal_rms(noise)
+	# print(burst_rms)
 	
-	
-	
-	print(len(x))
+	if config['power2'] == None:
+		n_points = 2**(max_2power(len(x1)))
+	else:
+		n_points = 2**config['power2']
+	x = x[0:n_points]
+	# print(len(x))
 	
 	# sys.exit()
 	
@@ -230,12 +233,12 @@ def main(argv):
 			# plt.suptitle(filename, fontsize=10)
 			if element == 'WFM':
 				ax_wfm = fig[count].add_subplot(1,1,1)
-				ax_wfm.set_title('Sensor ' + str(int(channel)+1) + ' ' + element + '\n' + filename)
+				ax_wfm.set_title('Sensor ' + str(channel) + ' ' + element + '\n' + filename)
 				ax_wfm.set_label('AE')
 				ax_wfm.plot(t, x)
 				ax_wfm.set_xlabel('Time s')
 				ax_wfm.set_ylabel('Amplitude V')
-				ax_wfm.text(0.008, 0.9*np.max(x), 'RMS ' + "{:.2E}".format(Decimal(str(burst_rms))), fontsize=12)
+				# ax_wfm.text(0.008, 0.9*np.max(x), 'RMS ' + "{:.2E}".format(Decimal(str(burst_rms))), fontsize=12)
 				# ax_wfm.set_xticks(np.arange(0, n_points*dt, 0.001))
 				# plt.grid()
 				# fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -346,7 +349,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 			config[element] = value
 	
 	#Type conversion to float
-	config['value'] = float(config['value'])
+	config['power2'] = int(config['power2'])
 	config['fs'] = float(config['fs'])
 	# config['fscore_min'] = float(config['fscore_min'])
 	#Type conversion to int	
