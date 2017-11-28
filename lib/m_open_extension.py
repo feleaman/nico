@@ -33,7 +33,11 @@ def f_open_tdms_2(filename):
 
 	tdms_file = TdmsFile(filename)
 	group_names = tdms_file.groups()
-	channel_object = tdms_file.group_channels(group_names[0])	
+	# print('groups')
+	# print(group_names)
+	channel_object = tdms_file.group_channels(group_names[0])
+	# print('channel')
+	# print(channel_object)
 	channel_name = channel_object[0].channel
 	# print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 	# print(channel_name)
@@ -87,33 +91,36 @@ def f_open_mat_2(filename):
 	return data, channel
 
 def f_open_mat(filename, channel):
-	try:
-		file = scipy.io.loadmat(filename)
-		data = file[channel]
+	# try:
+		# file = scipy.io.loadmat(filename)
+		# data = file[channel]
 
-	except:
-		try:
-			print('warning 888')		
-			channel = int(channel)
-			arrays = {}
-			f = h5py.File(filename)
-			for k, v in f.items():
-				arrays[k] = np.array(v)
-			data = arrays['AE_y'][channel]
-		except:
-			print('warning 468')		
-			with h5py.File(filename, 'r') as f:
-				data = list(f['Ch0'])[0]		
+	# except:
+		# try:
+			# print('warning 888')		
+			# channel = int(channel)
+			# arrays = {}
+			# f = h5py.File(filename)
+			# for k, v in f.items():
+				# arrays[k] = np.array(v)
+			# data = arrays['AE_y'][channel]
+		# except:
+			# print('warning 468')		
+			# with h5py.File(filename, 'r') as f:
+				# data = list(f['Ch0'])[0]
+				
 	# file = scipy.io.loadmat(filename)
 	# data = file[channel]
-	
-	# import h5py
-	# with h5py.File(filename, 'r') as f:
-		# print(list(f.keys()))
-		# # print(list(f['Ch0']))
-		# a = list(f['Ch0'])[0]
-		# print(type(a))
-		# print(a)
+	# -*- coding: cp852 -*-
+	# -*- coding: iso-8859-15 -*-
+	import h5py
+	# print(filename)
+	with h5py.File(filename, 'r') as f:
+		print(list(f.keys()))
+		# print(list(f['Ch0']))
+		data = list(f[channel])[0]
+		print(type(data))
+		print(data)
 
 	return data
 
@@ -132,10 +139,12 @@ def load_signal(filename, channel=None):
 	extension = filename[point_index+1] + filename[point_index+2] + filename[point_index+3]
 	if extension == 'mat':
 		x = f_open_mat(filename, channel)
+		# x = f_open_mat_2(filename)
+
 		x = np.ndarray.flatten(x)
 	elif extension == 'tdm': #tdms
-		# x = f_open_tdms(filename, channel)
-		x = f_open_tdms_2(filename)
+		x = f_open_tdms(filename, channel)
+		# x = f_open_tdms_2(filename)
 	elif extension == 'txt':
 		x = np.loadtxt(filename)
 	else:

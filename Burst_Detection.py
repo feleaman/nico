@@ -218,7 +218,7 @@ def burst_detector(x1, config, count=None):
 			print('error filename 1')
 			sys.exit()
 	else:
-		print('without clf check')
+		print('Info: detection without clf check')
 		clf_1 = None
 
 
@@ -246,11 +246,12 @@ def burst_detector(x1, config, count=None):
 	else:
 		scaler = 0
 	
-	if config['features'] == 'pca_50' or config['features'] == 'pca_10' or config['features'] == 'pca_5':
-		print('PCA:')
-		pca = info_model[3]
-	else:
-		pca = 0
+	if config['method'] == 'NN':
+		if config['features'] == 'pca_50' or config['features'] == 'pca_10' or config['features'] == 'pca_5':
+			print('PCA:')
+			pca = info_model[3]
+		else:
+			pca = 0
 
 	#Pre-processing
 	# config_filter = {'analysis':False, 'type':'median', 'mode':'bandpass', 'params':[[70.0e3, 350.0e3], 3]}

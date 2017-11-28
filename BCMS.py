@@ -15,6 +15,7 @@ Inputs = ['mode', 'fs', 'channel']
 InputsOpt_Defaults = {'n_batches':1}
 from m_fft import mag_fft
 from m_denois import *
+import pandas as pd
 
 def main(argv):
 	config = read_parser(argv, Inputs, InputsOpt_Defaults)
@@ -148,7 +149,9 @@ def main(argv):
 		plt.show()
 	
 	elif config['mode'] == 'long_analysis_features':
+
 		for count in range(config['n_batches']):
+			print('Batch ', count)
 			root = Tk()
 			root.withdraw()
 			root.update()
@@ -156,9 +159,22 @@ def main(argv):
 			root.destroy()
 			Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
 			# RMS = [signal_rms(signal) for signal in Data]
-			RMS = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=90.e3, order=3)) for signal in Data]
+			RMS = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data]
+			MAX = [np.max(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data]
 			save_pickle('rms_filt_batch_' + str(count) + '.pkl', RMS)
+			save_pickle('max_filt_batch_' + str(count) + '.pkl', MAX)
+			mydict = {}
 			
+			row_names = [os.path.basename(filepath) for filepath in Filepaths]
+			mydict['RMS'] = RMS
+			mydict['MAX'] = MAX
+			
+			DataFr = pd.DataFrame(data=mydict, index=row_names)
+			writer = pd.ExcelWriter('to_use_batch_' + str(count) + '.xlsx')
+
+		
+			DataFr.to_excel(writer, sheet_name='Sheet1')	
+			print('Result in Excel table')
 			
 			# mean_mag_fft = read_pickle('mean_5_fft.pkl')
 			# corrcoefMAGFFT = [np.corrcoef(mag_fft(signal, config['fs'])[0], mean_mag_fft) for signal in Data]
@@ -169,6 +185,79 @@ def main(argv):
 			
 			# plt.boxplot(RMS)
 			# plt.show()
+	
+	elif config['mode'] == 'new_long_analysis_features':
+		MASTER_FILEPATH = []
+		Channels = ['AE_1', 'AE_2', 'AE_3', 'AE_4']
+		
+		for count in range(config['n_batches']):
+			print('Select Batch ', count+7)
+			root = Tk()
+			root.withdraw()
+			root.update()
+			Filepaths = filedialog.askopenfilenames()
+			MASTER_FILEPATH.append(Filepaths)
+			root.destroy()
+
+
+		for count in range(config['n_batches']):
+			Filepaths = MASTER_FILEPATH[count]
+			ref_dbAE = 1.e-6
+			amp_factor = 43.
+			ini_count = 0
+			print('Processing Batch ', count+ini_count)			
+			
+			for channel in Channels:
+				Data = [load_signal(filepath, channel=channel) for filepath in Filepaths]
+				for i in range(len(Data)):
+					Data[i] = butter_highpass(x=Data[i], fs=config['fs'], freq=80.e3, order=3)
+				# RMS = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data]
+				# MAX = [np.max(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data]
+				RMS = [signal_rms(signal) for signal in Data]
+				MAX = [np.max(np.absolute(signal)) for signal in Data]
+				save_pickle('rms_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', RMS)
+				save_pickle('max_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', MAX)
+				
+				
+				
+				Data_dBAE = []
+				for signal in Data:
+					signal_dBAE = np.zeros(len(signal))
+					for i in range(len(signal)):
+						current_input_V = np.absolute(signal[i]/(10.**(amp_factor/20.)))
+						# print(current_input_V)
+						signal_dBAE[i] = 20*np.log10(current_input_V/ref_dbAE)
+
+					Data_dBAE.append(signal_dBAE)
+				
+				# RMS_dBAE = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data_dBAE]
+				# MAX_dBAE = [np.max(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data_dBAE]
+				RMS_dBAE = [signal_rms(signal) for signal in Data_dBAE]
+				MAX_dBAE = [np.max(signal) for signal in Data_dBAE]
+				save_pickle('rms_dBAE_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', RMS_dBAE)
+				save_pickle('max_dBAE_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', MAX_dBAE)
+				
+				mydict = {}			
+				row_names = [os.path.basename(filepath) for filepath in Filepaths]
+				mydict['RMS'] = RMS
+				mydict['MAX'] = MAX	
+				mydict['RMS_dBAE'] = RMS_dBAE
+				mydict['MAX_dBAE'] = MAX_dBAE			
+				DataFr = pd.DataFrame(data=mydict, index=row_names)
+				writer = pd.ExcelWriter('to_use_batch_' + str(count+ini_count) + '_channel_' + channel + '.xlsx')		
+				DataFr.to_excel(writer, sheet_name='Sheet1')
+				print('Result in Excel table')
+			
+			# mean_mag_fft = read_pickle('mean_5_fft.pkl')
+			# corrcoefMAGFFT = [np.corrcoef(mag_fft(signal, config['fs'])[0], mean_mag_fft) for signal in Data]
+			# save_pickle('fftcorrcoef_batch_' + str(count) + '.pkl', corrcoefMAGFFT)
+			
+			
+			
+			
+			# plt.boxplot(RMS)
+			# plt.show()
+	
 	
 	elif config['mode'] == 'long_analysis_plot':
 		# RMS_long = [[] for i in range(config['n_batches'])]
@@ -192,6 +281,47 @@ def main(argv):
 		
 		# plt.boxplot(RMS_long)
 		plt.show()
+	
+	elif config['mode'] == 'new_long_analysis_plot':
+		# RMS_long = [[] for i in range(config['n_batches'])]
+		print('Select table with features: ')
+		root = Tk()
+		root.withdraw()
+		root.update()
+		filepath = filedialog.askopenfilename()			
+		root.destroy()
+		# Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
+		# feature = read_pickle(filepath)
+		
+		# amp_factor = input('Input amplification factor dB: ')
+		# amp_factor = float(amp_factor)
+		
+		table = pd.read_excel(filepath)		
+		rows = table.axes[0].tolist()		
+		max_V = table['MAX'].values
+		rms_V = table['RMS'].values		
+		
+		times = [rows[i][25:31] for i in range(len(rows))]
+		times = [time[0:2] + ":" + time[2:4] + ":" + time[4:6] for time in times]
+		
+		
+		
+		fig, ax = plt.subplots(nrows=1, ncols=1)
+		ax.plot(max_V)
+		divisions = 10
+		ax.set_xticks( [i*divisions for i in range(int(len(times)/divisions))] + [len(times)-1])
+		# ax.set_xticklabels(times)
+		ax.set_xticklabels( [times[i*divisions] for i in range(int(len(times)/divisions))] + [times[len(times)-1]])
+		ax.set_ylabel('RMS Amplitude (V)')
+		
+		for label in ax.get_xmajorticklabels():
+			label.set_rotation(45)
+			label.set_horizontalalignment("right")
+		
+		
+		plt.show()
+
+		
 
 	elif config['mode'] == 'mean_mag_fft':
 		root = Tk()

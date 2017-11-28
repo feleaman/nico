@@ -61,7 +61,7 @@ from argparse import ArgumentParser
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
 Inputs = ['channel', 'fs']
-InputsOpt_Defaults = {'power2':None}
+InputsOpt_Defaults = {'power2':'OFF'}
 
 def main(argv):
 
@@ -85,8 +85,8 @@ def main(argv):
 		x = np.ndarray.flatten(x)
 
 	elif extension == 'tdm': #tdms
-		# x = f_open_tdms(filename, channel)
-		x = f_open_tdms_2(filename)
+		x = f_open_tdms(filename, channel)
+		# x = f_open_tdms_2(filename)
 
 
 	elif extension == 'txt': #tdms
@@ -128,10 +128,13 @@ def main(argv):
 	# burst_rms = signal_rms(x) - signal_rms(noise)
 	# print(burst_rms)
 	
-	if config['power2'] == None:
-		n_points = 2**(max_2power(len(x1)))
+	if config['power2'] == 'auto':
+		n_points = 2**(max_2power(len(x)))
+	elif config['power2'] == 'OFF':
+		n_points = len(x)
 	else:
 		n_points = 2**config['power2']
+	
 	x = x[0:n_points]
 	# print(len(x))
 	
@@ -349,7 +352,8 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 			config[element] = value
 	
 	#Type conversion to float
-	config['power2'] = int(config['power2'])
+	if config['power2'] != 'auto' and config['power2'] != 'OFF':
+		config['power2'] = int(config['power2'])
 	config['fs'] = float(config['fs'])
 	# config['fscore_min'] = float(config['fscore_min'])
 	#Type conversion to int	

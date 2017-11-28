@@ -68,6 +68,7 @@ def diff_signal_eq(x, length_diff):
 	#Differentiation/Derivative
 	n = len(x)
 	if length_diff != 'auto':
+
 		dx = np.zeros(n-length_diff)
 		n_diff = len(dx)
 		for i in range(n_diff):
