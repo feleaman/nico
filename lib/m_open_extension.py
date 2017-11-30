@@ -66,25 +66,35 @@ def f_open_mat_2(filename):
 		filename = filedialog.askopenfilename()
 
 	file = scipy.io.loadmat(filename)
-	print(file)
+	# print(file)
 	# print(file['AE_Signal'])
 	# group_name = file.groups()
 	# group_name = group_name[0]
 	try:
 		data = file['AE_Signal']
 		channel = 'AE_Signal'
+		print('AE_Signal')
 	except:
 		pass
 	
 	try:
 		data = file['Koerperschall']
 		channel = 'Koerperschall'
+		print('Koerperschall')
 	except:
 		pass
 	
 	try:
 		data = file['Drehmoment']
 		channel = 'Drehmoment'
+		print('Drehmoment')
+	except:
+		pass
+	
+	try:
+		data = file['a']
+		channel = 'a'
+		print('a')
 	except:
 		pass
 	
@@ -119,8 +129,8 @@ def f_open_mat(filename, channel):
 		print(list(f.keys()))
 		# print(list(f['Ch0']))
 		data = list(f[channel])[0]
-		print(type(data))
-		print(data)
+		# print(type(data))
+		# print(data)
 
 	return data
 

@@ -5,9 +5,11 @@ from scipy import stats
 import scipy
 import math
 import time
-from m_denois import fourier_filter
-from m_denois import butter_bandpass
-from m_denois import butter_lowpass
+import sys
+sys.path.insert(0, './lib') #to open user-defined functions
+from m_denois import *
+# from m_denois import butter_bandpass
+# from m_denois import butter_lowpass
 import matplotlib.pyplot as plt
 from m_demodulation import *
 

@@ -81,6 +81,7 @@ def main(argv):
 	extension = filename[point_index+1] + filename[point_index+2] + filename[point_index+3]
 
 	if extension == 'mat':
+		# x, channel = f_open_mat_2(filename)
 		x = f_open_mat(filename, channel)
 		x = np.ndarray.flatten(x)
 
@@ -145,25 +146,31 @@ def main(argv):
 	tr = n*dt
 	t = np.array([i*dt for i in range(n)])
 	
-
+	
+	# x = to_dBAE(x, 43.)
+	# x = x * 1000.
 	#++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-	config_analysis = {'WFM':True, 'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False, 'Cepstrum':False}
+	config_analysis = {'WFM':True, 'FFT':True, 'PSD':True, 'STFT':True, 'STPSD':False, 'Cepstrum':False, 'CyclicSpectrum':False}
 
-	config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['highpass', 70.0e3, 3], 
+	config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['highpass', 140.0e3, 3], 
 	'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3]}
 	#When hilbert is selected, the other parameters are ignored
 
 	config_diff = {'analysis':False, 'length':1, 'same':True}
 
-	config_stft = {'segments':100, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
+	config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
-	config_stPSD = {'segments':100, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
-
+	config_stPSD = {'segments':200, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
+	
+	config_denois = {'analysis':False, 'mode':'butter_bandpass', 'freq':[320.0e3, 380.e3]}
+	
+	config_CyclicSpectrum = {'segments':200, 'freq_range':[100.0e3, 400.0e3], 'window':'hanning', 'mode':'magnitude', 'log':False, 'off_PSD':True, 'kHz':True, 'warm_points':None}
 
 	#++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	if config_demod['analysis'] == True:
+		print('with demod')
 		if config_demod['mode'] == 'hilbert':
 			x = hilbert_demodulation(x)
 		elif config_demod['mode'] == 'butter':
@@ -173,6 +180,7 @@ def main(argv):
 			print('Error assignment demodulation')
 
 	if config_diff['analysis'] == True:
+		print('with diffr')
 		if config_diff['same'] == True:
 			x = diff_signal_eq(x=x, length_diff=config_diff['length'])
 		elif config_diff['same'] == False:
@@ -180,7 +188,15 @@ def main(argv):
 		else:
 			print('Error assignment diff')
 
-	
+	if config_denois['analysis'] == True:
+		print('with filter')
+		if config_denois['mode'] == 'butter_highpass':
+			x = butter_highpass(x=x, fs=config['fs'], freq=config_denois['freq'], order=3, warm_points=None)
+		elif config_denois['mode'] == 'butter_bandpass':
+			x = butter_bandpass(x=x, fs=config['fs'], freqs=config_denois['freq'], order=3, warm_points=None)
+
+		else:
+			print('Error assignment denois')
 	
 	
 	
@@ -221,7 +237,22 @@ def main(argv):
 	if config_analysis['Cepstrum'] == True:
 		cepstrumX, tc, dtc = cepstrum_real(x, fs)
 
+		
+	#++++++++++++++++++++++ CICLO +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+	if config_analysis['CyclicSpectrum'] == True:
+		segments = config_CyclicSpectrum['segments']
+		window = config_CyclicSpectrum['window']
+		mode = config_CyclicSpectrum['mode']
+		freq_range = config_CyclicSpectrum['freq_range']
+		
+		CyclicSpectrum, a_CyclicSpectrum, f_CyclicSpectrum = Cyclic_Spectrum(x=x, fs=fs, segments=segments, freq_range=freq_range, warm_points=config_CyclicSpectrum['warm_points'])
+		if config_CyclicSpectrum['off_PSD'] == True:
+			for i in range(len(CyclicSpectrum)):
+				CyclicSpectrum[i][0] = 0.
+
+		if config_CyclicSpectrum['log'] == True:
+			CyclicSpectrum = np.log(CyclicSpectrum)
 
 	#++++++++++++++++++++++ MULTI PLOT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	count = 0
@@ -236,7 +267,7 @@ def main(argv):
 			# plt.suptitle(filename, fontsize=10)
 			if element == 'WFM':
 				ax_wfm = fig[count].add_subplot(1,1,1)
-				ax_wfm.set_title('Sensor ' + str(channel) + ' ' + element + '\n' + filename)
+				ax_wfm.set_title(str(channel) + ' ' + element + '\n' + filename, fontsize=10)
 				ax_wfm.set_label('AE')
 				ax_wfm.plot(t, x)
 				ax_wfm.set_xlabel('Time s')
@@ -252,7 +283,7 @@ def main(argv):
 
 			elif element == 'FFT':
 				ax_fft = fig[count].add_subplot(1,1,1)
-				ax_fft.set_title(channel + ' ' + element + '\n' + filename)
+				ax_fft.set_title(channel + ' ' + element + '\n' + filename, fontsize=10)
 				ax_fft.plot(f/1000., magX, 'r')
 				ax_fft.set_xlabel('Frequency kHz')
 				ax_fft.set_ylabel('Amplitude V')
@@ -266,23 +297,67 @@ def main(argv):
 				# ax.set_xticklabels(['{:.}'.format(int(x)) for x in ax.get_xticks().tolist()])
 			elif element == 'STFT':
 				ax_stft = fig[count].add_subplot(1,1,1)
-				ax_stft.set_title(channel + ' ' + element)
-				ax_stft.pcolormesh(t_stft, f_stft, stftX)
+				# ax_stft.set_title(channel + ' ' + element)
+				ax_stft.set_title(str(channel) + ' ' + element + '\n' + filename, fontsize=10)
+				
+				ax_stft.pcolormesh(t_stft, f_stft/1000., stftX)
 				ax_stft.set_xlabel('Time s')
-				ax_stft.set_ylabel('Frequency Hz')
+				ax_stft.set_ylabel('Frequency kHz')
+				
+				map = []
+				vmax = max_cspectrum(stftX)				
+				map.append(ax_stft.pcolormesh(t_stft, f_stft/1000., stftX, cmap='plasma', vmax=vmax))
+				
+				# ax_stft.ticklabel_format(style='sci', scilimits=(-2, 2))
+				
+				
+				# indmax = np.argmax([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2)])
+				fig[count].colorbar(map[0], ax=ax_stft, ticks=np.linspace(0, vmax, 5), format='%1.2e')
+				
+				
+				# indmax = np.argmax([max_cspectrum(CyclicSpectrum1)])
+				# fig[count].colorbar(ax=ax_stft)
 
 			elif element == 'STPSD':
 				ax_stpsd = fig[count].add_subplot(1,1,1)
 				ax_stpsd.set_title(channel + ' ' + element)
-				ax_stpsd.pcolormesh(t_stPSD, f_stPSD, stPSDX)
+				ax_stpsd.pcolormesh(t_stPSD, f_stPSD/1000., stPSDX)
 				ax_stpsd.set_xlabel('Time s')
-				ax_stpsd.set_ylabel('Frequency Hz')
+				ax_stpsd.set_ylabel('Frequency kHz')
 			elif element == 'Cepstrum':
 				ax_cepstrum = fig[count].add_subplot(1,1,1)
 				ax_cepstrum.set_title(channel + ' ' + element)
 				ax_cepstrum.plot(tc, cepstrumX)
 				ax_cepstrum.set_xlabel('Quefrency s')
 				ax_cepstrum.set_ylabel('Amplitude')
+			
+			
+			elif element == 'CyclicSpectrum':
+				ax_ciclic = fig[count].add_subplot(1,1,1)
+				# ax_stft.set_title(channel + ' ' + element)
+				ax_ciclic.set_title(str(channel) + ' ' + element + '\n' + filename, fontsize=10)
+				
+				ax_ciclic.pcolormesh(a_CyclicSpectrum, f_CyclicSpectrum/1000., CyclicSpectrum)
+				ax_ciclic.set_xlabel('Cyclic Frequency Hz')
+				ax_ciclic.set_ylabel('Frequency kHz')
+				
+				
+				map = []
+				vmax = max_cspectrum(CyclicSpectrum)				
+				map.append(ax_ciclic.pcolormesh(a_CyclicSpectrum, f_CyclicSpectrum/1000., CyclicSpectrum, cmap='plasma', vmax=vmax))
+				
+				# ax_stft.ticklabel_format(style='sci', scilimits=(-2, 2))
+				
+				
+				# indmax = np.argmax([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2)])
+				fig[count].colorbar(map[0], ax=ax_ciclic, ticks=np.linspace(0, vmax, 5), format='%1.2e')
+				
+				
+				# indmax = np.argmax([max_cspectrum(CyclicSpectrum1)])
+				# fig[count].colorbar(ax=ax_stft)
+			
+			
+			
 
 			count = count + 1
 

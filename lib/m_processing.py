@@ -133,6 +133,14 @@ def max_2power(n_x):
 	power2 = count
 	return power2
 
+def to_dBAE(signal, amp_factor):
+	signal_dBAE = np.zeros(len(signal))
+	for i in range(len(signal)):
+		current_input_V = np.absolute(signal[i]/(10.**(amp_factor/20.)))
+		signal_dBAE[i] = 20*np.log10(current_input_V/1.e-6)
+	signal_dBAE = signal_dBAE.tolist()
+	return signal_dBAE
+	
 def signal_processing(x, config):
 	processing = config['processing']
 	if processing == 'demod_hilbert':

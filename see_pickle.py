@@ -4,6 +4,7 @@ import pickle
 sys.path.insert(0, './lib') #to open user-defined functions
 
 from m_open_extension import *
+import matplotlib.pyplot as plt
 
 from tkinter import filedialog
 from tkinter import Tk
@@ -14,6 +15,10 @@ filename = filedialog.askopenfilename()
 root.destroy()
 
 pik = read_pickle(filename)
+print(pik)
+plt.plot(pik)
+plt.show()
+sys.exit()
 
 # pik_new['filename'] = 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat'
 

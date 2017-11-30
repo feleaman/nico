@@ -1,5 +1,9 @@
-import os
+# import os
+from os import listdir
+from os.path import join, isdir, basename
 import sys
+# from sys import exit
+# from sys.path import path.insert
 # import pickle
 from tkinter import filedialog
 from tkinter import Tk
@@ -16,6 +20,9 @@ InputsOpt_Defaults = {'n_batches':1}
 from m_fft import mag_fft
 from m_denois import *
 import pandas as pd
+# import time
+# print(time.time())
+from datetime import datetime
 
 def main(argv):
 	config = read_parser(argv, Inputs, InputsOpt_Defaults)
@@ -55,14 +62,14 @@ def main(argv):
 		Data_Names = ['rpm.txt', 'torque.txt']
 		# Data_Names = ['temperature1.txt', 'temperature2.txt', 'temperature3.txt', 'temperature4.txt', 'temperature5.txt', 'temperature6.txt', 'temperature7.txt', 'temperature8.txt', 'temperature9.txt', 'temperature10.txt', 'temperature11.txt', 'temperature12.txt']
 		Concatenated_Data = [[] for i in range(len(Data_Names))]
-		for element in os.listdir(mypath):
-			if os.path.isdir(os.path.join(mypath, element)) == True:
-				dir_list.append(os.path.join(mypath, element))		
+		for element in listdir(mypath):
+			if isdir(join(mypath, element)) == True:
+				dir_list.append(join(mypath, element))		
 		for dir in dir_list:
 			print(dir)
 			count = 0
 			for data_name in Data_Names:
-				data_path = os.path.join(dir, data_name)
+				data_path = join(dir, data_name)
 				data = np.loadtxt(data_path)
 				data = np.float32(data)
 				data = data.tolist()
@@ -85,7 +92,7 @@ def main(argv):
 			data = data.tolist()
 			time = [i/config['fs'] for i in range(len(data))]
 			
-			path_basename = os.path.basename(filepath)
+			path_basename = basename(filepath)
 			if path_basename.find('temperature') != -1:
 				ind1 = path_basename.find('.') - 1
 				ind2 = ind1 - 1
@@ -131,7 +138,7 @@ def main(argv):
 			data = np.loadtxt(filepath)
 			data = data.tolist()
 			time = [i/config['fs'] for i in range(len(data))]				
-			path_basename = os.path.basename(filepath)
+			path_basename = basename(filepath)
 			if path_basename.find('torque') != -1:
 				ax1.plot(time, data, '-b')
 				ax1.set_ylabel('Torque kNm', color='b')
@@ -165,7 +172,7 @@ def main(argv):
 			save_pickle('max_filt_batch_' + str(count) + '.pkl', MAX)
 			mydict = {}
 			
-			row_names = [os.path.basename(filepath) for filepath in Filepaths]
+			row_names = [basename(filepath) for filepath in Filepaths]
 			mydict['RMS'] = RMS
 			mydict['MAX'] = MAX
 			
@@ -189,60 +196,60 @@ def main(argv):
 	elif config['mode'] == 'new_long_analysis_features':
 		MASTER_FILEPATH = []
 		Channels = ['AE_1', 'AE_2', 'AE_3', 'AE_4']
+		ref_dbAE = 1.e-6
+		amp_factor = 43.
+		ini_count = 5
 		
 		for count in range(config['n_batches']):
-			print('Select Batch ', count+7)
+			print('Select Batch ', count+ini_count)
 			root = Tk()
 			root.withdraw()
 			root.update()
 			Filepaths = filedialog.askopenfilenames()
 			MASTER_FILEPATH.append(Filepaths)
 			root.destroy()
-
+		
+		# import time
+		from time import time
+		start_time = time()
 
 		for count in range(config['n_batches']):
 			Filepaths = MASTER_FILEPATH[count]
-			ref_dbAE = 1.e-6
-			amp_factor = 43.
-			ini_count = 0
+			
 			print('Processing Batch ', count+ini_count)			
 			
 			for channel in Channels:
-				Data = [load_signal(filepath, channel=channel) for filepath in Filepaths]
-				for i in range(len(Data)):
-					Data[i] = butter_highpass(x=Data[i], fs=config['fs'], freq=80.e3, order=3)
-				# RMS = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data]
-				# MAX = [np.max(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data]
-				RMS = [signal_rms(signal) for signal in Data]
+				# Data = [load_signal(filepath, channel=channel) for filepath in Filepaths]
+				Data = [butter_highpass(x=load_signal(filepath, channel=channel), fs=config['fs'], freq=80.e3, order=3) for filepath in Filepaths]
+				# for i in range(len(Data)):
+					# Data[i] = butter_highpass(x=Data[i], fs=config['fs'], freq=80.e3, order=3)
+				# RMS = [signal_rms(signal) for signal in Data]
 				MAX = [np.max(np.absolute(signal)) for signal in Data]
-				save_pickle('rms_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', RMS)
-				save_pickle('max_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', MAX)
+				# save_pickle('rms_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', RMS)
+				# save_pickle('max_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', MAX)
 				
 				
 				
-				Data_dBAE = []
-				for signal in Data:
-					signal_dBAE = np.zeros(len(signal))
-					for i in range(len(signal)):
-						current_input_V = np.absolute(signal[i]/(10.**(amp_factor/20.)))
-						# print(current_input_V)
-						signal_dBAE[i] = 20*np.log10(current_input_V/ref_dbAE)
+				# Data_dBAE = []
+				# for signal in Data:
+					# signal_dBAE = np.zeros(len(signal))
+					# for i in range(len(signal)):
+						# current_input_V = np.absolute(signal[i]/(10.**(amp_factor/20.)))
+						# signal_dBAE[i] = 20*np.log10(current_input_V/ref_dbAE)
 
-					Data_dBAE.append(signal_dBAE)
+					# Data_dBAE.append(signal_dBAE)
+				# RMS_dBAE = [signal_rms(signal) for signal in Data_dBAE]
+				# MAX_dBAE = [np.max(signal) for signal in Data_dBAE]
 				
-				# RMS_dBAE = [signal_rms(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data_dBAE]
-				# MAX_dBAE = [np.max(butter_highpass(x=signal, fs=config['fs'], freq=80.e3, order=3)) for signal in Data_dBAE]
-				RMS_dBAE = [signal_rms(signal) for signal in Data_dBAE]
-				MAX_dBAE = [np.max(signal) for signal in Data_dBAE]
-				save_pickle('rms_dBAE_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', RMS_dBAE)
-				save_pickle('max_dBAE_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', MAX_dBAE)
+				# save_pickle('rms_dBAE_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', RMS_dBAE)
+				# save_pickle('max_dBAE_filt_batch_' + str(count+ini_count) + '_channel_' + channel + '.pkl', MAX_dBAE)
 				
 				mydict = {}			
-				row_names = [os.path.basename(filepath) for filepath in Filepaths]
-				mydict['RMS'] = RMS
+				row_names = [basename(filepath) for filepath in Filepaths]
+				# mydict['RMS'] = RMS
 				mydict['MAX'] = MAX	
-				mydict['RMS_dBAE'] = RMS_dBAE
-				mydict['MAX_dBAE'] = MAX_dBAE			
+				# mydict['RMS_dBAE'] = RMS_dBAE
+				# mydict['MAX_dBAE'] = MAX_dBAE			
 				DataFr = pd.DataFrame(data=mydict, index=row_names)
 				writer = pd.ExcelWriter('to_use_batch_' + str(count+ini_count) + '_channel_' + channel + '.xlsx')		
 				DataFr.to_excel(writer, sheet_name='Sheet1')
@@ -252,7 +259,8 @@ def main(argv):
 			# corrcoefMAGFFT = [np.corrcoef(mag_fft(signal, config['fs'])[0], mean_mag_fft) for signal in Data]
 			# save_pickle('fftcorrcoef_batch_' + str(count) + '.pkl', corrcoefMAGFFT)
 			
-			
+		print("--- %s seconds ---" % (time() - start_time))
+	
 			
 			
 			# plt.boxplot(RMS)
@@ -262,22 +270,51 @@ def main(argv):
 	elif config['mode'] == 'long_analysis_plot':
 		# RMS_long = [[] for i in range(config['n_batches'])]
 		
-		root = Tk()
-		root.withdraw()
-		root.update()
-		Filepaths = filedialog.askopenfilenames()			
-		root.destroy()
+		# root = Tk()
+		# root.withdraw()
+		# root.update()
+		# Filepaths = filedialog.askopenfilenames()			
+		# root.destroy()
 		# Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
-		RMS_long = [read_pickle(filepath) for filepath in Filepaths]
+		# RMS_long = [read_pickle(filepath) for filepath in Filepaths]
+		
+		
+		# rows = table.axes[0].tolist()		
+		# max_V = table['MAX'].values
+		# rms_V = table['RMS'].values
+		
+		Filepaths = []
+		for i in range(7):
+			root = Tk()
+			root.withdraw()
+			root.update()
+			filepath = filedialog.askopenfilename()			
+			root.destroy()
+			Filepaths.append(filepath)
+		
+		
+		RMS_long = []
+		for filepath in Filepaths:
+			table = pd.read_excel(filepath)	
+			RMS_long.append(table['MAX'].values)
+		
 		# save_pickle('rms_batch.pkl', RMS)
 		
 		fig, ax = plt.subplots(nrows=1, ncols=1)
 		ax.boxplot(RMS_long)
 		ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-		ax.set_xticklabels(['14:06', '14:16', '14:30', '15:00', '15:30', '16:00', '16:20', '17:00', '17:30', '18:00', '18:30', '19:00', '23:30', '00:03'])
-		ax.set_xlabel('Time on 20171020')
-		ax.set_ylabel('RMS Amplitude')
-		ax.set_ylim(bottom=1.e-4, top=4.e-4)
+		
+		ax.set_title('AE_4', fontsize=12)
+		
+		ax.set_xticklabels(['M=25%\nn=100%', 'M=50%\nn=100%', 'M=75%\nn=100%', 'M=100%\nn=25%', 'M=100%\nn=50%', 'M=100%\nn=75%', 'M=100%\nn=100%'])
+		# for label in ax.get_xmajorticklabels():
+			# label.set_rotation(45)
+			# label.set_horizontalalignment("right")
+
+		# ax.set_xticklabels(['14:06', '14:16', '14:30', '15:00', '15:30', '16:00', '16:20', '17:00', '17:30', '18:00', '18:30', '19:00', '23:30', '00:03'])
+		# ax.set_xlabel('Time on 20171020')
+		ax.set_ylabel('Max. Amplitude (V)')
+		# ax.set_ylim(bottom=1.e-4, top=4.e-4)
 		
 		# plt.boxplot(RMS_long)
 		plt.show()
@@ -288,36 +325,65 @@ def main(argv):
 		root = Tk()
 		root.withdraw()
 		root.update()
-		filepath = filedialog.askopenfilename()			
+		Filepaths = filedialog.askopenfilenames()			
 		root.destroy()
 		# Data = [load_signal(filepath, channel=config['channel']) for filepath in Filepaths]
 		# feature = read_pickle(filepath)
 		
 		# amp_factor = input('Input amplification factor dB: ')
 		# amp_factor = float(amp_factor)
-		
-		table = pd.read_excel(filepath)		
-		rows = table.axes[0].tolist()		
-		max_V = table['MAX'].values
-		rms_V = table['RMS'].values		
-		
-		times = [rows[i][25:31] for i in range(len(rows))]
-		times = [time[0:2] + ":" + time[2:4] + ":" + time[4:6] for time in times]
-		
-		
-		
 		fig, ax = plt.subplots(nrows=1, ncols=1)
-		ax.plot(max_V)
-		divisions = 10
+		for filepath in Filepaths:
+			table = pd.read_excel(filepath)	
+			rows = table.axes[0].tolist()		
+			# max_V = table['MAX'].values
+			feature = table['MAX'].values
+			
+			# print(rms_V)
+			# print(max_V)
+			# sys.exit()
+			
+			times = [rows[i][25:31] for i in range(len(rows))]
+			times = [time[0:2] + ":" + time[2:4] + ":" + time[4:6] for time in times]
+			
+			filename = basename(filepath)
+			index = filename.find('.')
+			label = filename[index-4:index]			
+			ax.plot(feature, label=label)
+			# ax.plot(feature, label=label)
+			# ax.plot(feature, label=label)
+		
+		
+		
+		ax.legend()
+		divisions = 20
 		ax.set_xticks( [i*divisions for i in range(int(len(times)/divisions))] + [len(times)-1])
 		# ax.set_xticklabels(times)
 		ax.set_xticklabels( [times[i*divisions] for i in range(int(len(times)/divisions))] + [times[len(times)-1]])
-		ax.set_ylabel('RMS Amplitude (V)')
+		ax.set_ylabel('Max. Amplitude (V)')
 		
 		for label in ax.get_xmajorticklabels():
 			label.set_rotation(45)
 			label.set_horizontalalignment("right")
 		
+		
+		
+		root = Tk()
+		root.withdraw()
+		root.update()
+		filepath = filedialog.askopenfilename()		
+		root.destroy()
+		table = pd.read_excel(filepath)	
+		rows = table.axes[0].tolist()		
+		# max_V = table['MAX'].values
+		rpm = table['n'].values
+		
+		ax2 = ax.twinx()
+		ax2.plot(rpm, 'om')
+		# ax2.set_ylabel('RPM', color='r')
+		# ax2.tick_params('y', colors='r')
+		ax2.set_ylabel('RPM', color='m')
+		ax2.tick_params('y', colors='m')
 		
 		plt.show()
 

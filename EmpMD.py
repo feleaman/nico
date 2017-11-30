@@ -1,5 +1,8 @@
 import numpy as np
 import sys
+sys.path.insert(0, './lib')
+import pickle
+
 import matplotlib.pyplot as plt
 from scipy import interpolate
 import time
@@ -7,10 +10,13 @@ start_time = time.time()
 from os.path import isfile, join
 import scipy.io
 import argparse
+from m_open_extension import *
+from m_denois import butter_highpass
+
 
 Inputs = ['path', 'file_x', 'channel', 'power2', 'save']
 Inputs_opt = ['file_h1', 'min_iter', 'max_iter', 's_number', 'tolerance', 'file_h2', 'file_h3']
-Defaults = [None, 100, 40000, 2, 2, None, None]
+Defaults = [None, 1000, 10000, 2, 2, None, None]
 
 def main(argv):
 	config_input = read_parser(argv, Inputs, Inputs_opt, Defaults)
@@ -30,10 +36,57 @@ def main(argv):
 	file_h3 = config_input['file_h3']
 
 	filepath_x = join(path, file_x)
-	x = f_open_mat(filepath_x, channel)
-	x = np.ndarray.flatten(x)
-	n_points = 2**int(power2)
+	filename = filepath_x
+	# x = f_open_mat(filepath_x, channel)
+	# x = np.ndarray.flatten(x)
+	
+	point_index = filepath_x.find('.')
+	extension = filepath_x[point_index+1] +filepath_x[point_index+2] + filepath_x[point_index+3]
+	
+	if extension == 'mat':
+		x, channel = f_open_mat_2(filename)
+		# x = f_open_mat(filename, channel)
+		x = np.ndarray.flatten(x)
+
+	elif extension == 'tdm': #tdms
+		x = f_open_tdms(filename, channel)
+		# x = f_open_tdms_2(filename)
+
+
+	elif extension == 'txt': #tdms
+		x = np.loadtxt(filename)
+	# filename = os.path.basename(filename) #changes from path to file
+	print(filepath_x)
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	if power2 == 'auto':
+		n_points = 2**(max_2power(len(x)))
+	elif power2 == 'OFF':
+		n_points = len(x)
+	else:
+		n_points = 2**power2
+	
 	x = x[0:n_points]
+	
+	
+	# n_points = 2**int(power2)
+	# x = x[0:n_points]
 	
 	if file_h1 != None and file_h2 == None:
 		print('To calculate: h2')
@@ -70,11 +123,17 @@ def main(argv):
 	t = np.array([i*dt for i in range(n)])
 
 	#++++++++++++++++++++++++++++ENVELOPES AND MEAN
+	
+	x = butter_highpass(x=x, fs=1.e6, freq=80.e3, order=3, warm_points=None)
+	
+	plt.plot(x)
+	plt.show()
 	h1 = sifting_iteration(t, x, min_iter, max_iter, s_number, tolerance)
 	
 	if save == 'ON':
 		print('Saving...')
-		np.savetxt(name_out + file_x[:-4] + '.txt', h1)
+		save_pickle(name_out + file_x[:-4] + 'pkl', h1)
+		# np.savetxt(name_out + file_x[:-4] + '.txt', h1)
 
 	print("--- %s seconds ---" % (time.time() - start_time))
 	sys.exit()
