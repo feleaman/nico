@@ -11,12 +11,14 @@ from os.path import isfile, join
 import scipy.io
 import argparse
 from m_open_extension import *
+from m_demodulation import *
+
 from m_denois import butter_highpass
 
 
 Inputs = ['path', 'file_x', 'channel', 'power2', 'save']
 Inputs_opt = ['file_h1', 'min_iter', 'max_iter', 's_number', 'tolerance', 'file_h2', 'file_h3']
-Defaults = [None, 1000, 10000, 2, 2, None, None]
+Defaults = [None, 1000, 10000, 2, 3.0, None, None]
 
 def main(argv):
 	config_input = read_parser(argv, Inputs, Inputs_opt, Defaults)
@@ -31,7 +33,7 @@ def main(argv):
 	min_iter = int(config_input['min_iter'])
 	max_iter = int(config_input['max_iter'])
 	s_number = int(config_input['s_number'])
-	tolerance = int(config_input['tolerance'])
+	tolerance = float(config_input['tolerance'])
 	file_h2 = config_input['file_h2']
 	file_h3 = config_input['file_h3']
 
@@ -43,20 +45,22 @@ def main(argv):
 	point_index = filepath_x.find('.')
 	extension = filepath_x[point_index+1] +filepath_x[point_index+2] + filepath_x[point_index+3]
 	
-	if extension == 'mat':
-		x, channel = f_open_mat_2(filename)
+	
+	x = load_signal(filename, channel)
+	# if extension == 'mat':
+		# # x, channel = f_open_mat_2(filename)
 		# x = f_open_mat(filename, channel)
-		x = np.ndarray.flatten(x)
+		# x = np.ndarray.flatten(x)
 
-	elif extension == 'tdm': #tdms
-		x = f_open_tdms(filename, channel)
-		# x = f_open_tdms_2(filename)
+	# elif extension == 'tdm': #tdms
+		# x = f_open_tdms(filename, channel)
+		# # x = f_open_tdms_2(filename)
 
 
-	elif extension == 'txt': #tdms
-		x = np.loadtxt(filename)
-	# filename = os.path.basename(filename) #changes from path to file
-	print(filepath_x)
+	# elif extension == 'txt': #tdms
+		# x = np.loadtxt(filename)
+	# # filename = os.path.basename(filename) #changes from path to file
+	# print(filepath_x)
 	
 	
 	
@@ -116,19 +120,21 @@ def main(argv):
 		print('To calculate: h1')
 		name_out = 'h1_'
 		
-	print('Fs = 1 MHz for AE')
-	fs = 1000000.0
+	print('Fs = 10 MHz for AE')
+	fs = 10000000.0
 	dt = 1/fs
 	n = len(x)
 	t = np.array([i*dt for i in range(n)])
 
 	#++++++++++++++++++++++++++++ENVELOPES AND MEAN
 	
-	x = butter_highpass(x=x, fs=1.e6, freq=80.e3, order=3, warm_points=None)
+	# x = butter_highpass(x=x, fs=1.e6, freq=80.e3, order=3, warm_points=None)
 	
+	# x = butter_demodulation(x=x, fs=10.e6, filter=['lowpass', 5000., 3], prefilter=['highpass', 80.e3, 3], type_rect='only_positives', dc_value='without_dc')
 	plt.plot(x)
 	plt.show()
-	h1 = sifting_iteration(t, x, min_iter, max_iter, s_number, tolerance)
+	# h1 = sifting_iteration(t, x, min_iter, max_iter, s_number, tolerance)
+	h1 = sifting_iteration_sd(t, x, min_iter, max_iter, tolerance)
 	
 	if save == 'ON':
 		print('Saving...')
@@ -183,6 +189,7 @@ def sifting_iteration(t, x, min_iter, max_iter, s_number, tolerance):
 			error_extrema = extrema(h1)-extrema_x
 			error_xzeros = xzeros(h1)-xzeros(x)		
 			error = error_extrema + error_xzeros
+
 			print(error)
 			if error < tolerance:
 				s_iter = s_iter + 1
@@ -195,6 +202,31 @@ def sifting_iteration(t, x, min_iter, max_iter, s_number, tolerance):
 			break
 		if s_iter > 15:
 			break
+	return h1
+	
+	
+def sifting_iteration_sd(t, x, min_iter, max_iter, tolerance):
+	# s_number = 2
+	# tolerance = 2	
+	# max_iter = 5
+	# min_iter = 1
+	cont = 0
+	sd = 5000000
+	while (sd > tolerance):
+		print('++++++++iteration ', cont)
+		h1, extrema_x = sifting2(t, x)
+		if cont > min_iter:
+			sum = 0.
+			for i in range(len(h1)):
+				# print(x[i])
+				sum = sum + ((x[i] - h1[i])**2.0)/(1+(x[i])**2.0)
+			sd = sum
+			print('SD = ', sd)
+		x = h1
+		cont = cont + 1
+		if cont > max_iter:
+			break
+
 	return h1
 
 def extrema(x):
@@ -220,6 +252,21 @@ def xzeros(x):
 			n_xzeros = n_xzeros + 1
 
 	return n_xzeros
+
+def extrema_xzeros(x):
+	n = len(x)
+	n_xzeros = 0
+	n_extrema = 0
+	
+	for i in range(n-2):
+		if (x[i+1] < x[i] and x[i+2] > x[i+1]) or (x[i+1] > x[i] and x[i+2] < x[i+1]):
+			n_extrema = n_extrema + 1
+			
+		if (x[i] > 0 and x[i+1] < 0) or (x[i] < 0 and x[i+1] > 0):
+			n_xzeros = n_xzeros + 1
+
+
+	return n_extrema, n_xzeros
 	
 def env_down(t, x):
 	n = len(x)

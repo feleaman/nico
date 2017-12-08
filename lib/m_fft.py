@@ -76,6 +76,7 @@ def Cyclic_Spectrum(x, fs, segments, freq_range, warm_points):
 	CyclicSpectrum = []
 	maxvec = []
 	for i in range(segments):
+		print(i/segments)
 		CyclicSpectrumWindow = filtered_x[i]**2.0
 		resp = CyclicSpectrumWindow
 		CyclicSpectrumWindow = butter_lowpass(x=resp, fs=fs, freq=1000.0, order=3, warm_points=None)

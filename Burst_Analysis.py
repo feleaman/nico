@@ -257,7 +257,10 @@ def main(argv):
 
 
 		
-		angles = np.array([57, 57+240, 57+120])*2*3.14/360
+		angles = np.array([78, 318, 198])*2*3.14/360
+		
+		
+		
 		radii = RMS_rel
 		
 		
@@ -275,34 +278,72 @@ def main(argv):
 			
 		fig, ax = plt.subplots(subplot_kw=dict(polar=True),)
 		kw = dict(arrowstyle="->", color='k', lw=2)
+		
+		
 		# if arrowprops:
 			# kw.update(arrowprops)
-		[ax.annotate("", xy=(angle, radius), xytext=(0, 0),
-					 arrowprops=kw) for
-		 angle, radius in zip(angles, radii)]		 
+		# [ax.annotate("", xy=(angle, radius), xytext=(0, 0),
+					 # arrowprops=kw) for
+		 # angle, radius in zip(angles, radii)]		 
 		 
 		 
 		kw = dict(arrowstyle="->", color='r', lw=2)
+		
+		
+		# xy = (78*2*3.14/360, 0.5)
+		# [ax.annotate("", xy=xy, xytext=(0, 0),
+					 # arrowprops=kw) for
+		 # angle, radius in zip(angles, radii)]
 		 
-		[ax.annotate("", xy=(result_angle, result_radii), xytext=(0, 0),
-					 arrowprops=kw) for
-		 angle, radius in zip(angles, radii)]
-		ax.set_ylim(0, np.max(radii))		
+		 
+		# ax.set_ylim(0, np.max(radii))	
+
+
+		
 		ax.set_facecolor('lavender')
 		ax.set_rmax(1.0)
+		ax.text(x=angles[0], y=1.05, s='S1', fontsize=20)
+		ax.text(x=angles[1], y=1.1, s='S2', fontsize=20)
+		ax.text(x=angles[2], y=1.24, s='S3', fontsize=20)
+		ax.set_ylim(0, 1)
 		
 		
-		if zahn == 1:
-			plt.scatter((90+12)*2*np.pi/360, 1, s=200, c='limegreen')
-		elif zahn == 2:
-			plt.scatter(90*2*np.pi/360, 1, s=200, c='g')
-		elif zahn == 3:		
-			plt.scatter((90-12)*2*np.pi/360, 1, s=200, c='g')
 		
-		plt.scatter(angles[0], 1, s=200, c='k')
-		plt.scatter(angles[1], 1, s=200, c='k')
-		plt.scatter(angles[2], 1, s=200, c='k')
-		plt.scatter(result_angle, 1, s=200, c='r')
+		# if zahn == 1:
+			# plt.scatter((90+12)*2*np.pi/360, 1, s=200, c='limegreen')
+		# elif zahn == 2:
+			# plt.scatter(90*2*np.pi/360, 1, s=200, c='g')
+		# elif zahn == 3:		
+			# plt.scatter((90-12)*2*np.pi/360, 1, s=200, c='g')
+			
+		# plt.scatter((355.5)*2*np.pi/360, 1, s=200, c='g')
+		# plt.scatter((23)*2*np.pi/360, 1, s=200, c='g')
+		# plt.scatter((50.5)*2*np.pi/360, 1, s=200, c='g')
+		# plt.scatter((105.5)*2*np.pi/360, 1, s=200, c='g')
+		plt.scatter((133)*2*np.pi/360, 1, s=200, c='g')
+		plt.scatter((160.5)*2*np.pi/360, 1, s=200, c='r')
+		# plt.scatter((55.)*2*np.pi/360, 1, s=200, c='g')
+		# plt.scatter((40.)*2*np.pi/360, 1, s=200, c='g')
+		# plt.scatter((90.)*2*np.pi/360, 1, s=200, c='r')
+		
+		# ax.text(x=(355.5)*2*np.pi/360, y=1.05, s='A', fontsize=20)
+		# ax.text(x=(23)*2*np.pi/360, y=1.07, s='B', fontsize=20)
+		# ax.text(x=(50.5)*2*np.pi/360, y=1.07, s='C', fontsize=20)
+		# ax.text(x=(105.5)*2*np.pi/360, y=1.07, s='D', fontsize=20)
+		ax.text(x=(133)*2*np.pi/360, y=1.1, s='E', fontsize=20)
+		ax.text(x=(160.5)*2*np.pi/360, y=1.1, s='F', fontsize=20)
+		# ax.text(x=(55.)*2*np.pi/360, y=1.1, s='Tooth 1', fontsize=20)
+		# ax.text(x=(40.)*2*np.pi/360, y=1.1, s='Tooth 2', fontsize=20)
+		# ax.text(x=(90.)*2*np.pi/360, y=1.1, s='O', fontsize=20)
+		
+		ax.set_xticks([])
+		ax.set_yticks([])
+		
+		
+		plt.scatter(angles[0], 1, s=200, c='b')
+		plt.scatter(angles[1], 1, s=200, c='b')
+		plt.scatter(angles[2], 1, s=200, c='b')
+		# plt.scatter(result_angle, 1, s=200, c='r')
 		
 		plt.show()
 	

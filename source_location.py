@@ -21,7 +21,7 @@ from Burst_Detection import burst_detector
 
 Inputs = ['mode', 'fs', 'channel', 'method', 'plot']
 
-InputsOpt_Defaults = {'demod_filter':['lowpass', 2000., 3], 'demod_prefilter':['highpass', 70.e3, 3], 'diff':1, 'thr_value':0.0004, 'processing':'butter_demod', 'thr_mode':'fixed_value', 'demod_dc':'without_dc', 'demod_rect':'only_positives', 'clf_check':'OFF', 'data_norm':'per_rms', 'denois':'OFF', 'window_time':0.001}
+InputsOpt_Defaults = {'demod_filter':['lowpass', 5000., 3], 'demod_prefilter':['highpass', 80.e3, 3], 'diff':1, 'thr_value':0.0004, 'processing':'butter_demod', 'thr_mode':'fixed_value', 'demod_dc':'without_dc', 'demod_rect':'only_positives', 'clf_check':'OFF', 'data_norm':'per_rms', 'denois':'OFF', 'window_time':0.001}
 
 
 def main(argv):
@@ -33,7 +33,7 @@ def main(argv):
 		sys.exit()
 	
 	if config['mode'] == '11':
-
+		sensor_angles = [78., 328., 188.]
 		mydict = {}
 		print('Runing Localization Analysis: 1 Source, 1 Repetition')
 		count = 1
@@ -44,10 +44,12 @@ def main(argv):
 		Filepath = filedialog.askopenfilename()			
 		root.destroy()
 		if config['channel'] == 'all':
-			Channels = ['0', '1', '2']		
+			Channels = ['AE_1', 'AE_2', 'AE_3']		
 
 		Data = [load_signal(Filepath, channel=channel) for channel in Channels]
 		
+		
+		angle_value = calculate_angle(Data[0], Data[1], Data[2], sensor_angles, config)
 		if config['plot'] == 'ON':
 			fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
 			t = [i/config['fs'] for i in range(len(Data[0]))]
@@ -57,7 +59,6 @@ def main(argv):
 			
 			plt.plot()
 			plt.show()
-		angle_value = calculate_angle(Data[0], Data[1], Data[2], config)
 
 		print('Estimated Angle: ', angle_value)
 	
@@ -182,7 +183,7 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	return config
 
 
-def calculate_angle(signal1, signal2, signal3, config):
+def calculate_angle(signal1, signal2, signal3, sensor_angles, config):
 		
 	# config['clf_check'] = 'OFF'
 	# config['method'] = 'EDG'
@@ -210,31 +211,83 @@ def calculate_angle(signal1, signal2, signal3, config):
 	# config['thr_value'] = 0.0004
 	
 	
-	x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal1, config, count=None)
+	
+	
+	x1_1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal1, config, count=None)
 	# x1 = x1[10000:]
-	t = [i/config['fs'] for i in range(len(x1))]
+	t = [i/config['fs'] for i in range(len(x1_1))]
 	# plt.plot(x1)
 	# plt.show()
 	# t1 = t_burst_corr1[0]
-	t1 = np.argmax(x1[5000:])/config['fs']
+	t1 = (np.argmax(x1_1[5000:])+5000)/config['fs']
+	x1_max = np.max(x1_1[5000:])
 	
-	x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal2, config, count=None)
+	x1_2, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal2, config, count=None)
 	# x1 = x1[10000:]
 	# plt.plot(x1)
 	# plt.show()
 	# t2 = t_burst_corr1[0]
-	t2 = np.argmax(x1[5000:])/config['fs']
+	t2 = (np.argmax(x1_2[5000:])+5000)/config['fs']
+	x2_max = np.max(x1_2[5000:])
 	
-	x1, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal3, config, count=None)
+	x1_3, t_burst_corr1, amp_burst_corr1, Results, clf_1 = burst_detector(signal3, config, count=None)
 	# x1 = x1[10000:]
 	# plt.plot(x1)
 	# plt.show()
 	# t3 = t_burst_corr1[0]
-	t3 = np.argmax(x1[5000:])/config['fs']
+	t3 = (np.argmax(x1_3[5000:])+5000)/config['fs']
+	x3_max = np.max(x1_3[5000:])
+	
+	print(t1, t2, t3)
+	
+	if x1_max > x3_max and x3_max > x2_max:
+		print('no nothing')
+		print('sensor closest: 1, sensor furthest: 2')
+		
+		
+	elif x1_max > x3_max and x2_max > x3_max:
+		t2_temp = t2
+		t2 = t3
+		t3 = t2_temp
+		print('sensor closest: 1, sensor furthest: 3')
+	elif x3_max > x1_max and x1_max > x2_max:
+		t1_temp = t1
+		t1 = t3
+		t3 = t1_temp
+		print('sensor closest: 3, sensor furthest: 2')
+	elif x3_max > x1_max and x2_max > x1_max:		
+		t1_temp = t1
+		t2_temp = t2		
+		t1 = t3		
+		t2 = t1_temp		
+		t3 = t2_temp
+		print('sensor closest: 3, sensor furthest: 1')		
+	elif x2_max > x1_max and x3_max > x1_max:		
+		t1_temp = t1		
+		t1 = t2
+		t2 = t1_temp
+		print('sensor closest: 2, sensor furthest: 1')	
+	elif x2_max > x1_max and x1_max > x3_max:		
+		t1_temp = t1		
+		t1 = t2
+		t2 = t3
+		t3 = t1_temp
+		print('sensor closest: 2, sensor furthest: 3')	
+	else:
+		print('warning times')
+	
 	
 	
 
 	
+	
+	fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
+	t = [i/config['fs'] for i in range(len(x1_1))]
+	ax[0].plot(t, x1_1)
+	ax[1].plot(t, x1_2)
+	ax[2].plot(t, x1_3)
+	
+	plt.show()
 
 	# t1 = np.argmax(Data[0])/config['fs']
 	# t2 = np.argmax(Data[1])/config['fs']
@@ -244,11 +297,19 @@ def calculate_angle(signal1, signal2, signal3, config):
 	
 	t12 = t2 - t1
 	t13 = t3 - t1
-	theta1 = 57
-	theta2 = 57 + 240
-	theta3 = 57 + 120
+	
+	
+	# theta1 = 57
+	# theta2 = 57 + 240
+	# theta3 = 57 + 120
+	# theta12 = 120
+	
+	theta1 = sensor_angles[0]
+	theta2 = sensor_angles[1]
+	theta3 = sensor_angles[2]
+	theta12 = theta1 + np.absolute(360. - theta2)
+	
 	theta13 = theta3 - theta1
-	theta12 = 120
 	theta01 = (theta13*t12/theta12 - t13)*theta12/(2*t12)
 	theta0 = theta01 + theta1
 	# print('Time of Max in Sensor 1: ', t1)

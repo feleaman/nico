@@ -56,10 +56,15 @@ point_index = filename1.find('.')
 extension = filename1[point_index+1] + filename1[point_index+2] + filename1[point_index+3]
 
 if extension == 'mat':
-	x1 = f_open_mat(filename1, channel)
-	x1 = np.ndarray.flatten(x1)
-	x2 = f_open_mat(filename2, channel)
-	x2 = np.ndarray.flatten(x2)
+	# x1 = f_open_mat(filename1, channel)
+	# x1 = np.ndarray.flatten(x1)
+	# x2 = f_open_mat(filename2, channel)
+	# x2 = np.ndarray.flatten(x2)
+	
+	x1 = f_open_mat_2(filename1)
+	x1 = np.ndarray.flatten(x1[0])
+	x2 = f_open_mat_2(filename2)
+	x2 = np.ndarray.flatten(x2[0])
 
 elif extension == 'tdm': #tdms
 	x1 = f_open_tdms(filename1, channel)
@@ -81,6 +86,7 @@ elif channel == 'AE_Signal':
 	fs = 1000000.0
 else:
 	print('Error fs assignment')
+	fs = 1000000.0
 
 if args.power2 == None:
 	n_points = 2**(max_2power(len(x1)))
@@ -126,7 +132,7 @@ t = np.array([i*dt for i in range(n_points)])
 
 #++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 config_analysis = {'WFM':True, 'WFMzoom':False,  'FFT':False, 'PSD':False, 'STFT':False, 'STPSD':False,
-'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':False}
+'Cepstrum':False, 'Hist':False, 'CyclicSpectrum':True}
 
 config_norm = {'analysis':False, 'type':'rms'}
 
@@ -148,7 +154,7 @@ config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-sca
 
 config_stPSD = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
-config_CyclicSpectrum = {'segments':100, 'freq_range':[10.0e3, 450.0e3], 'window':'hanning', 'mode':'magnitude', 'log':False, 'off_PSD':True,
+config_CyclicSpectrum = {'segments':50, 'freq_range':[100.0e3, 450.0e3], 'window':'hanning', 'mode':'magnitude', 'log':False, 'off_PSD':True,
 'kHz':True, 'warm_points':None}
 
 #++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++

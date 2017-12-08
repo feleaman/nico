@@ -7,7 +7,7 @@ os.system('cd C:\Felix\Code\nico')
 
 
 try:
-	os.system('python EmpMD.py --path C:\Felix\Eickhoff_EMD --file_x Eickhoff_WEA_AE_20171122_224303.tdms --channel AE_3 --power2 OFF --save ON --min_iter 1000')
+	os.system('python EmpMD.py --path C:\Felix\Eickhoff_EMD --file_x export_0105_2017_11_22_18_46_40.mat --channel AE_3 --power2 OFF --save ON --min_iter 1 --max_iter 5 --tolerance 0.5')
 except:
 	print('error')
 

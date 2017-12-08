@@ -15,9 +15,19 @@ filename = filedialog.askopenfilename()
 root.destroy()
 
 pik = read_pickle(filename)
-print(pik)
-plt.plot(pik)
-plt.show()
+# print('rms')
+# print(pik['feat_rms'])
+# print('rise')
+
+# print(pik['feat_rise'])
+# print('count')
+
+# print(pik['feat_count'])
+
+print(len(pik['classification']))
+
+# plt.plot(pik)
+# plt.show()
 sys.exit()
 
 # pik_new['filename'] = 'V1_9_n1500_M80_AE_Signal_20160928_144737.mat'

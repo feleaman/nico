@@ -141,7 +141,7 @@ def hilbert_spectrum(time, frec, amp):
 	y = frec
 	z = amp
 	n = len(x)
-	cmap = plt.get_cmap('cool')
+	cmap = plt.get_cmap('binary')
 	norm = BoundaryNorm(np.linspace(z.min(), z.max(), 1000), cmap.N)
 	points = np.array([x, y]).T.reshape(-1, 1, 2)
 	segments = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -155,7 +155,7 @@ def hilbert_spectrum(time, frec, amp):
 	plt.show()
 #++++++++++++++++++++++++++++DEFINITION
 mypath = 'C:/Felix/Code/nico'
-filename = join(mypath, 'h1_Eickhoff_WEA_AE_20171122_224303_566rest.pkl')
+filename = join(mypath, 'h1_export_0105_2017_11_22_18_46_40_raw.pkl')
 h1 = read_pickle(filename)
 
 # h1 = h1[0:5000000]
@@ -174,7 +174,7 @@ h1 = read_pickle(filename)
 # h1 = np.loadtxt(filename)
 # filename = join(mypath, 'h2_V1_9_n1500_M80_AE_Signal_20160506_142422.txt')
 # h2 = np.loadtxt(filename)
-fs = 1000000.0
+fs = 10000000.0
 dt = 1/fs
 # freq = 10.
 

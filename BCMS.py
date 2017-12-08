@@ -195,10 +195,11 @@ def main(argv):
 	
 	elif config['mode'] == 'new_long_analysis_features':
 		MASTER_FILEPATH = []
-		Channels = ['AE_1', 'AE_2', 'AE_3', 'AE_4']
+		# Channels = ['AE_1', 'AE_2', 'AE_3', 'AE_4']
+		Channels = ['AE_1', 'AE_2', 'AE_3']
 		ref_dbAE = 1.e-6
 		amp_factor = 43.
-		ini_count = 5
+		ini_count = 22
 		
 		for count in range(config['n_batches']):
 			print('Select Batch ', count+ini_count)
@@ -251,7 +252,8 @@ def main(argv):
 				# mydict['RMS_dBAE'] = RMS_dBAE
 				# mydict['MAX_dBAE'] = MAX_dBAE			
 				DataFr = pd.DataFrame(data=mydict, index=row_names)
-				writer = pd.ExcelWriter('to_use_batch_' + str(count+ini_count) + '_channel_' + channel + '.xlsx')		
+				# writer = pd.ExcelWriter('to_use_batch_' + str(count+ini_count) + '_channel_' + channel + '.xlsx')
+				writer = pd.ExcelWriter('Batch_' + str(count+ini_count) + '_Features_OK_' + channel + '.xlsx')				
 				DataFr.to_excel(writer, sheet_name='Sheet1')
 				print('Result in Excel table')
 			
@@ -284,36 +286,52 @@ def main(argv):
 		# rms_V = table['RMS'].values
 		
 		Filepaths = []
-		for i in range(7):
-			root = Tk()
-			root.withdraw()
-			root.update()
-			filepath = filedialog.askopenfilename()			
-			root.destroy()
+		for i in range(2):
+			# root = Tk()
+			# root.withdraw()
+			# root.update()
+			# filepath = filedialog.askopenfilename()			
+			# root.destroy()
+			
+			i = i + 22
+			base = 'M:\Betriebsmessungen\WEA-Getriebe Eickhoff\Durchführung\Auswertung\Batch_' + str(i)
+			filepath = join(base, 'Batch_' + str(i) + '_Features_OK_AE_1.xlsx')
+			
+			
 			Filepaths.append(filepath)
 		
 		
-		RMS_long = []
+		FEATURE = []
 		for filepath in Filepaths:
 			table = pd.read_excel(filepath)	
-			RMS_long.append(table['MAX'].values)
+			FEATURE.append(table['MAX'].values)
 		
+		FEATURE = np.array(FEATURE)
+		FEATURE = (FEATURE / 281.8) * 1000
+		FEATURE = FEATURE.tolist()
 		# save_pickle('rms_batch.pkl', RMS)
 		
 		fig, ax = plt.subplots(nrows=1, ncols=1)
-		ax.boxplot(RMS_long)
+		ax.boxplot(FEATURE)
 		ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
 		
-		ax.set_title('AE_4', fontsize=12)
+		ax.set_title('AE_1', fontsize=12)
 		
-		ax.set_xticklabels(['M=25%\nn=100%', 'M=50%\nn=100%', 'M=75%\nn=100%', 'M=100%\nn=25%', 'M=100%\nn=50%', 'M=100%\nn=75%', 'M=100%\nn=100%'])
+		# ax.set_xticklabels(['M=25%\nn=100%', 'M=50%\nn=100%', 'M=75%\nn=100%', 'M=100%\nn=25%', 'M=100%\nn=50%', 'M=100%\nn=75%', 'M=100%\nn=100%'])
+		# ax.set_xticklabels(['Point A', 'Point B', 'Point C', 'Point D', 'Point E', 'Point F'])
+		# ax.set_xticklabels(['Tooth 1', 'Tooth 2'])
+		# ax.set_xticklabels(['Max High', 'Min High'])
+		ax.set_xticklabels(['Point E', 'Point F'])
 		# for label in ax.get_xmajorticklabels():
 			# label.set_rotation(45)
 			# label.set_horizontalalignment("right")
 
 		# ax.set_xticklabels(['14:06', '14:16', '14:30', '15:00', '15:30', '16:00', '16:20', '17:00', '17:30', '18:00', '18:30', '19:00', '23:30', '00:03'])
 		# ax.set_xlabel('Time on 20171020')
-		ax.set_ylabel('Max. Amplitude (V)')
+		
+		params = {'mathtext.default': 'regular' }          
+		plt.rcParams.update(params)
+		ax.set_ylabel('Max. Amplitude (m$V_{in}$)')
 		# ax.set_ylim(bottom=1.e-4, top=4.e-4)
 		
 		# plt.boxplot(RMS_long)
@@ -337,7 +355,21 @@ def main(argv):
 			table = pd.read_excel(filepath)	
 			rows = table.axes[0].tolist()		
 			# max_V = table['MAX'].values
-			feature = table['MAX'].values
+			feature = table['RMS'].values
+			
+			feature = (feature / 141.25) * 1000
+			# feature = (feature / 281.8) * 1000
+			
+			# movil_avg = 10
+			# for i in range(len(feature)):
+				# if i >= movil_avg:
+					# count = 0
+					# for k in range(movil_avg):
+						# count = count + feature[i-k]
+					# feature[i] = count / movil_avg
+						
+					
+					
 			
 			# print(rms_V)
 			# print(max_V)
@@ -356,11 +388,16 @@ def main(argv):
 		
 		
 		ax.legend()
-		divisions = 20
+		divisions = 10
 		ax.set_xticks( [i*divisions for i in range(int(len(times)/divisions))] + [len(times)-1])
 		# ax.set_xticklabels(times)
 		ax.set_xticklabels( [times[i*divisions] for i in range(int(len(times)/divisions))] + [times[len(times)-1]])
-		ax.set_ylabel('Max. Amplitude (V)')
+		
+		params = {'mathtext.default': 'regular' }          
+		plt.rcParams.update(params)		
+		ax.set_ylabel('RMS Value (m$V_{in}$)')
+		# ax.set_ylabel('Max. Amplitude (m$V_{in}$)')
+
 		
 		for label in ax.get_xmajorticklabels():
 			label.set_rotation(45)
@@ -376,13 +413,18 @@ def main(argv):
 		table = pd.read_excel(filepath)	
 		rows = table.axes[0].tolist()		
 		# max_V = table['MAX'].values
-		rpm = table['n'].values
+		rpm = table['M'].values
 		
 		ax2 = ax.twinx()
 		ax2.plot(rpm, 'om')
 		# ax2.set_ylabel('RPM', color='r')
 		# ax2.tick_params('y', colors='r')
-		ax2.set_ylabel('RPM', color='m')
+		# ax2.set_ylabel('RPM', color='m')
+		params = {'mathtext.default': 'regular' }          
+		plt.rcParams.update(params)
+		# ax2.set_ylabel('$RPM_{out}$', color='m')
+		ax2.set_ylabel('$Torque_{out}$ (kNm)', color='m')
+
 		ax2.tick_params('y', colors='m')
 		
 		plt.show()

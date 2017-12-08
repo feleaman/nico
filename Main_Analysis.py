@@ -61,13 +61,13 @@ from argparse import ArgumentParser
 
 #++++++++++++++++++++++ DATA LOAD ++++++++++++++++++++++++++++++++++++++++++++++
 Inputs = ['channel', 'fs']
-InputsOpt_Defaults = {'power2':'OFF'}
+InputsOpt_Defaults = {'power2':'OFF', 'plot':'OFF'}
 
 def main(argv):
-
-
-
+	# print(argv)
+	# 
 	config = read_parser(argv, Inputs, InputsOpt_Defaults)
+
 	channel = config['channel']
 	fs = config['fs']
 
@@ -87,6 +87,10 @@ def main(argv):
 
 	elif extension == 'tdm': #tdms
 		x = f_open_tdms(filename, channel)
+		# x = f_open_tdms_2(filename)
+	
+	elif extension == 'pkl': #tdms
+		x = read_pickle(filename)
 		# x = f_open_tdms_2(filename)
 
 
@@ -138,8 +142,11 @@ def main(argv):
 	
 	x = x[0:n_points]
 	# print(len(x))
-	
+	# x = x /
 	# sys.exit()
+	
+	# x = (x /281.8) * 1000
+	x = (x /141.25) * 1000
 	
 	n = len(x)
 	n_points = n
@@ -147,25 +154,33 @@ def main(argv):
 	t = np.array([i*dt for i in range(n)])
 	
 	
+	# for i in range(len(x)):
+		# if x[i] <= 72.:
+			# x[i] = 0.
+		# else:
+			# x[i] = 1.
+	
+	
+	
 	# x = to_dBAE(x, 43.)
 	# x = x * 1000.
 	#++++++++++++++++++++++ ANALYSIS CONFIGURATION ++++++++++++++++++++++++++++++++++++++++++++++
 
-	config_analysis = {'WFM':True, 'FFT':True, 'PSD':True, 'STFT':True, 'STPSD':False, 'Cepstrum':False, 'CyclicSpectrum':False}
+	config_analysis = {'WFM':True, 'FFT':True, 'PSD':False, 'STFT':False, 'STPSD':False, 'Cepstrum':False, 'CyclicSpectrum':False}
 
-	config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['highpass', 140.0e3, 3], 
-	'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 5000.0, 3]}
+	config_demod = {'analysis':False, 'mode':'butter', 'prefilter':['bandpass', [300.e3, 350.e3], 3], 
+	'rectification':'only_positives', 'dc_value':'without_dc', 'filter':['lowpass', 1000.0, 3]}
 	#When hilbert is selected, the other parameters are ignored
 
 	config_diff = {'analysis':False, 'length':1, 'same':True}
 
-	config_stft = {'segments':1000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
+	config_stft = {'segments':5000, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 
 	config_stPSD = {'segments':200, 'window':'hanning', 'mode':'magnitude', 'log-scale':False}
 	
-	config_denois = {'analysis':False, 'mode':'butter_bandpass', 'freq':[320.0e3, 380.e3]}
+	config_denois = {'analysis':True, 'mode':'butter_highpass', 'freq':300.e3}
 	
-	config_CyclicSpectrum = {'segments':200, 'freq_range':[100.0e3, 400.0e3], 'window':'hanning', 'mode':'magnitude', 'log':False, 'off_PSD':True, 'kHz':True, 'warm_points':None}
+	config_CyclicSpectrum = {'segments':50, 'freq_range':[100.0e3, 500.0e3], 'window':'boxcar', 'mode':'magnitude', 'log':False, 'off_PSD':True, 'kHz':True, 'warm_points':None}
 
 	#++++++++++++++++++++++ SIGNAL DEFINITION ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -194,10 +209,25 @@ def main(argv):
 			x = butter_highpass(x=x, fs=config['fs'], freq=config_denois['freq'], order=3, warm_points=None)
 		elif config_denois['mode'] == 'butter_bandpass':
 			x = butter_bandpass(x=x, fs=config['fs'], freqs=config_denois['freq'], order=3, warm_points=None)
+		elif config_denois['mode'] == 'butter_lowpass':
+			x = butter_lowpass(x=x, fs=config['fs'], freq=config_denois['freq'], order=3, warm_points=None)
 
 		else:
 			print('Error assignment denois')
 	
+	# print('valor rms!!!!!!!!!!!!!!!!!!!!')
+	# print(signal_rms(x))
+	
+	
+	# for i in range(len(x)):
+		# if x[i] <= 0.5:
+			# x[i] = 0.
+		# else:
+			# x[i] = 1.
+	# x = np.ones(len(x)) - x
+	
+	
+	# save_pickle('tacho_' + filename + '.pkl', x)
 	
 	
 	#++++++++++++++++++++++ FFT +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -271,7 +301,9 @@ def main(argv):
 				ax_wfm.set_label('AE')
 				ax_wfm.plot(t, x)
 				ax_wfm.set_xlabel('Time s')
-				ax_wfm.set_ylabel('Amplitude V')
+				params = {'mathtext.default': 'regular' }          
+				plt.rcParams.update(params)
+				ax_wfm.set_ylabel('Amplitude (m$V_{in}$)')
 				# ax_wfm.text(0.008, 0.9*np.max(x), 'RMS ' + "{:.2E}".format(Decimal(str(burst_rms))), fontsize=12)
 				# ax_wfm.set_xticks(np.arange(0, n_points*dt, 0.001))
 				# plt.grid()
@@ -279,15 +311,23 @@ def main(argv):
 				# ax.set_xticks(np.arange(0, n_points*dt, window_points*dt))
 				# ax.plot(t, x1)
 				
+				# fg = 40.2
+				# ax_wfm.set_xticks(np.arange(0, tr, 1./fg))
+				# ax.plot(t, x1)
+				# plt.grid()
+				
 				# plt.show()
 
 			elif element == 'FFT':
 				ax_fft = fig[count].add_subplot(1,1,1)
 				ax_fft.set_title(channel + ' ' + element + '\n' + filename, fontsize=10)
-				ax_fft.plot(f/1000., magX, 'r')
-				ax_fft.set_xlabel('Frequency kHz')
-				ax_fft.set_ylabel('Amplitude V')
-				ax_fft.ticklabel_format(style='sci', scilimits=(-4, 4))
+				ax_fft.plot(f, magX, 'r')
+				ax_fft.set_xlabel('Frequency Hz')
+				ax_fft.ticklabel_format(axis='y', style='sci', scilimits=(-1, 1))
+				params = {'mathtext.default': 'regular' }          
+				plt.rcParams.update(params)
+				ax_fft.set_ylabel('Amplitude (m$V_{in}$)')
+				# ax_fft.ticklabel_format(style='sci', scilimits=(-4, 4))
 			elif element == 'PSD':
 				ax_psd = fig[count].add_subplot(1,1,1)
 				ax_psd.set_title(channel + ' ' + element)
@@ -342,16 +382,17 @@ def main(argv):
 				ax_ciclic.set_ylabel('Frequency kHz')
 				
 				
-				map = []
-				vmax = max_cspectrum(CyclicSpectrum)				
-				map.append(ax_ciclic.pcolormesh(a_CyclicSpectrum, f_CyclicSpectrum/1000., CyclicSpectrum, cmap='plasma', vmax=vmax))
+				# map = []
+				# vmax = max_cspectrum(CyclicSpectrum)				
+				# map.append(ax_ciclic.pcolormesh(a_CyclicSpectrum, f_CyclicSpectrum/1000., CyclicSpectrum, cmap='plasma', vmax=vmax))
 				
 				# ax_stft.ticklabel_format(style='sci', scilimits=(-2, 2))
 				
 				
 				# indmax = np.argmax([max_cspectrum(CyclicSpectrum1), max_cspectrum(CyclicSpectrum2)])
-				fig[count].colorbar(map[0], ax=ax_ciclic, ticks=np.linspace(0, vmax, 5), format='%1.2e')
 				
+				# fig[count].colorbar(map[0], ax=ax_ciclic, ticks=np.linspace(0, vmax, 5), format='%1.2e')
+				# fig[count].colorbar(ax=ax_ciclic)
 				
 				# indmax = np.argmax([max_cspectrum(CyclicSpectrum1)])
 				# fig[count].colorbar(ax=ax_stft)
@@ -360,8 +401,8 @@ def main(argv):
 			
 
 			count = count + 1
-
-	plt.show()
+	if config['plot'] == 'ON':
+		plt.show()
 
 
 
@@ -396,28 +437,47 @@ def main(argv):
 				# plt.xlabel('Quefrency s')
 				# plt.ylabel('Amplitude')
 				# plt.plot(tc, cepstrumX)
-	return
+	return t, x, f, magX
 
 # plt.show()
 def read_parser(argv, Inputs, InputsOpt_Defaults):
-	Inputs_opt = [key for key in InputsOpt_Defaults]
-	Defaults = [InputsOpt_Defaults[key] for key in InputsOpt_Defaults]
-	parser = ArgumentParser()
-	for element in (Inputs + Inputs_opt):
-		print(element)
-		if element == 'no_element':
-			parser.add_argument('--' + element, nargs='+')
-		else:
-			parser.add_argument('--' + element, nargs='?')
-	
-	args = parser.parse_args()
-	config = {}
+	try:
+		Inputs_opt = [key for key in InputsOpt_Defaults]
+		Defaults = [InputsOpt_Defaults[key] for key in InputsOpt_Defaults]
+		parser = ArgumentParser()
+		for element in (Inputs + Inputs_opt):
+			print(element)
+			if element == 'no_element':
+				parser.add_argument('--' + element, nargs='+')
+			else:
+				parser.add_argument('--' + element, nargs='?')
+		print(parser.parse_args())
+		args = parser.parse_args()
+
+		
+	except:
+		# args = argv
+		arguments = [element for element in argv if element[0:2] == '--']
+		values = [element for element in argv if element[0:2] != '--']
+
+		# from argparse import ArgumentParser
+		# from ArgumentParser import Namespace
+		parser = ArgumentParser()
+		for element in arguments:
+			parser.add_argument(element)
+
+		args = parser.parse_args(argv)
+
+		# print(test)
+		# sys.exit()
+		
+	config = {}	
+		
 	for element in Inputs:
 		if getattr(args, element) != None:
 			config[element] = getattr(args, element)
 		else:
 			print('Required:', element)
-			sys.exit()
 
 	for element, value in zip(Inputs_opt, Defaults):
 		if getattr(args, element) != None:
@@ -430,9 +490,11 @@ def read_parser(argv, Inputs, InputsOpt_Defaults):
 	if config['power2'] != 'auto' and config['power2'] != 'OFF':
 		config['power2'] = int(config['power2'])
 	config['fs'] = float(config['fs'])
+	
 	# config['fscore_min'] = float(config['fscore_min'])
 	#Type conversion to int	
 	# Variable conversion
+	print('caca')
 	return config
 
 
